@@ -95,7 +95,9 @@ object GlobalInitCompat {
     }
   }
 
-  def initInteractiveGlobal(settings: Settings, reporter: StoreReporter, libs: Seq[io.AbstractFile]): nsc.interactive.Global = {
+  def initInteractiveGlobal(settings: Settings,
+                            reporter: StoreReporter,
+                            libs: Seq[io.AbstractFile]): nsc.interactive.Global = {
     val jCtx = new JavaContext()
     new nsc.interactive.Global(settings, reporter) with InMemoryGlobal { g =>
       def ctx  = jCtx

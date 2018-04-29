@@ -197,7 +197,7 @@ object Static {
                 width := "100%",
                 height := "100%",
                 attr("frameborder") := "0",
-                attr("sandbox") := "allow-scripts",
+                attr("sandbox") := "allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox",
                 src := s"codeframe?theme=${paramMap.getOrElse("theme", "light")}"
               )
             )
@@ -249,11 +249,11 @@ object Static {
           script(
             `type` := "text/javascript",
             raw("""
-              |var label = document.getElementById("output-tag");
-              |var canvas = document.getElementById("canvas");
-              |var panel = document.getElementById("output");
-              |var container = document.getElementById("container");
               |window.addEventListener('message', function (e) {
+              |  var label = document.getElementById("output-tag");
+              |  var canvas = document.getElementById("canvas");
+              |  var panel = document.getElementById("output");
+              |  var container = document.getElementById("container");
               |  var mainWindow = e.source;
               |  var msg = e.data;
               |  switch(msg.cmd) {

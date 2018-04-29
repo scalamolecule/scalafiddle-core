@@ -1,13 +1,16 @@
 package fiddle
 
 import org.scalajs.dom
-import org.scalajs.dom.html
+import org.scalajs.dom.{CanvasRenderingContext2D, html}
+import org.scalajs.dom.html.{Canvas, Div}
 
 import scala.concurrent.{Future, Promise}
 import scala.scalajs.js
 import scala.scalajs.js.annotation.JSExportTopLevel
 import scala.util.Try
 import scalatags.JsDom.all._
+
+import scala.scalajs.js.timers.{SetIntervalHandle, SetTimeoutHandle}
 
 /**
   * API for things that belong to the page, and are useful to both the fiddle
@@ -28,14 +31,14 @@ object Fiddle {
     * Gets the element from the given ID and casts it,
     * shortening that common pattern
     */
-  def getElem[T](id: String) = dom.document.getElementById(id).asInstanceOf[T]
+  private def getElem[T](id: String): T = dom.document.getElementById(id).asInstanceOf[T]
 
-  val sandbox = getElem[html.Div]("container")
-  val canvas  = getElem[html.Canvas]("canvas")
-  val draw    = canvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
-  val panel   = getElem[html.Div]("output")
+  val sandbox: Div                   = getElem[html.Div]("container")
+  val canvas: Canvas                 = getElem[html.Canvas]("canvas")
+  val draw: CanvasRenderingContext2D = canvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
+  val panel: Div                     = getElem[html.Div]("output")
 
-  def println(ss: Any) = {
+  def println(ss: Any): Unit = {
     ss match {
       case null =>
         print(div(cls := "monospace", "null"))
@@ -46,16 +49,16 @@ object Fiddle {
     }
   }
 
-  def printDiv(ss: Modifier*) = {
+  def printDiv(ss: Modifier*): Unit = {
     print(div(ss))
   }
 
-  def print(ss: Modifier*) = {
+  def print(ss: Modifier*): Unit = {
     ss.foreach(_.applyTo(panel))
     panel.scrollTop = panel.scrollHeight - panel.clientHeight
   }
 
-  def clear() = {
+  def clear(): Unit = {
     // clear panel and canvas
     panel.innerHTML = ""
     canvas.height = sandbox.clientHeight
@@ -73,13 +76,31 @@ object Fiddle {
     p.future
   }
 
-  def scheduleOnce(delay: Int)(f: => Unit) = {
+  def scheduleOnce(delay: Int)(f: => Unit): SetTimeoutHandle = {
     val handle = js.timers.setTimeout(delay)(f)
     handle
   }
 
-  def schedule(interval: Int)(f: => Unit) = {
+  def schedule(interval: Int)(f: => Unit): SetIntervalHandle = {
     val handle = js.timers.setInterval(interval)(f)
     handle
   }
+
+  def loadJS(url: String): Future[Unit] = {
+    val script = dom.document.createElement("script").asInstanceOf[html.Script]
+    script.`type` = "text/javascript"
+    script.src = url
+    val p = Promise[Unit]
+    script.onload = (e: dom.Event) => p.success(())
+    dom.document.body.appendChild(script)
+    p.future
+  }
+
+  def loadCSS(url: String): Unit = {
+    val link = dom.document.createElement("link").asInstanceOf[html.Link]
+    link.rel = "stylesheet"
+    link.href = url
+    dom.document.head.appendChild(link)
+  }
+
 }

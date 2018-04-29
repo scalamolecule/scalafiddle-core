@@ -1,5 +1,23 @@
 [
   {
+    "group": "FP",
+    "libraries": [
+      {
+        "name": "Scalaz",
+        "organization": "org.scalaz",
+        "artifact": "scalaz-core",
+        "doc": "scalaz/scalaz",
+        "versions": [
+          {
+            "version": "7.2.16",
+            "scalaVersions": ["2.11", "2.12"]
+          }
+        ],
+        "compileTimeOnly": false
+      }
+    ]
+  },
+  {
     "group": "Web",
     "libraries": [
       {
@@ -66,7 +84,8 @@
             "scalaVersions": ["2.11", "2.12"],
             "jsDeps": [
               "d3js % 3.5.17 % https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.17/d3.min.js"
-            ]
+            ],
+            "example": "https://gist.githubusercontent.com/ochrons/78ebefcc978168f73b5ad8e5f2e1973e/raw/844121bf764cec1ddddff0d12ac5e9dc3fd73ee9/ScalaFiddle%2520D3%2520test"
           }
         ],
         "compileTimeOnly": false
@@ -98,6 +117,6 @@
         ],
         "compileTimeOnly": false
       }
-      ]
+    ]
   }
 ]

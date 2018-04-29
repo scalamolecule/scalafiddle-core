@@ -2,24 +2,27 @@ import sbt._
 import Keys._
 import Settings._
 
-scalafmtOnCompile in ThisBuild := true
-scalafmtVersion in ThisBuild := "1.3.0"
+ThisBuild / scalafmtOnCompile := true
 
 val commonSettings = Seq(
   scalacOptions := scalacArgs,
-  scalaVersion := "2.12.4",
+  scalaVersion := "2.12.5",
   version := versions.fiddle,
-  libraryDependencies ++= Seq(
-    )
+  libraryDependencies ++= Seq()
 )
+
+val crossVersions = crossScalaVersions := Seq("2.12.5", "2.11.12")
 
 lazy val root = project
   .in(file("."))
-  .aggregate(page, compilerServer, runtime, client, router)
+  .aggregate(shared, page, compilerServer, runtime, client, router)
 
 lazy val shared = project
   .enablePlugins(ScalaJSPlugin)
   .settings(commonSettings)
+  .settings(
+    crossVersions
+  )
 
 lazy val client = project
   .enablePlugins(ScalaJSPlugin)
@@ -30,10 +33,10 @@ lazy val client = project
       "org.scala-js"          %%% "scalajs-dom" % versions.dom,
       "com.github.marklister" %%% "base64"      % versions.base64
     ),
-    //scalaJSLinkerConfig in (Compile, fullOptJS) ~= { _.withClosureCompilerIfAvailable(false) },
+    //Compile / fullOptJS / scalaJSLinkerConfig ~= { _.withClosureCompilerIfAvailable(false) },
     // rename output always to -opt.js
-    artifactPath in (Compile, fastOptJS) := ((crossTarget in (Compile, fastOptJS)).value /
-      ((moduleName in fastOptJS).value + "-opt.js")),
+    Compile / fastOptJS / artifactPath := ((Compile / fastOptJS / crossTarget).value /
+      ((fastOptJS / moduleName).value + "-opt.js")),
     relativeSourceMaps := true
   )
 
@@ -41,6 +44,7 @@ lazy val page = project
   .enablePlugins(ScalaJSPlugin)
   .settings(commonSettings)
   .settings(
+    crossVersions,
     libraryDependencies ++= Seq(
       "org.scala-js" %%% "scalajs-dom" % versions.dom,
       "com.lihaoyi"  %%% "scalatags"   % versions.scalatags
@@ -65,7 +69,7 @@ lazy val compilerServer = project
   .settings(Revolver.settings: _*)
   .settings(
     name := "scalafiddle-core",
-    crossScalaVersions := Seq("2.11.12", "2.12.4"),
+    crossVersions,
     libraryDependencies ++= Seq(
       "org.scala-lang"         % "scala-compiler"   % scalaVersion.value,
       "org.scala-js"           % "scalajs-compiler" % scalaJSVersion cross CrossVersion.full,
@@ -81,17 +85,17 @@ lazy val compilerServer = project
       "org.xerial.snappy"      % "snappy-java"      % "1.1.2.6",
       "org.xerial.larray"      %% "larray"          % "0.4.0"
     ) ++ kamon ++ akka ++ logging,
-    (resources in Compile) ++= {
-      (managedClasspath in (runtime, Compile)).value.map(_.data) ++ Seq(
-        (packageBin in (page, Compile)).value
+    (Compile / resources) ++= {
+      (runtime / Compile / managedClasspath).value.map(_.data) ++ Seq(
+        (page / Compile / packageBin).value
       )
     },
     resolvers += "Typesafe Repo" at "http://repo.typesafe.com/typesafe/releases/",
-    javaOptions in reStart ++= Seq("-Xmx3g", "-Xss4m"),
-    javaOptions in Universal ++= Seq("-J-Xss4m"),
-    resourceGenerators in Compile += Def.task {
-      // store build version in a property file
-      val file = (resourceManaged in Compile).value / "version.properties"
+    reStart / javaOptions ++= Seq("-Xmx3g", "-Xss4m"),
+    Universal / javaOptions ++= Seq("-J-Xss4m"),
+    Compile / resourceGenerators += Def.task {
+      // store build a / version property file
+      val file = (Compile / resourceManaged).value / "version.properties"
       val contents =
         s"""
            |version=${version.value}
@@ -103,7 +107,7 @@ lazy val compilerServer = project
       Seq(file)
     }.taskValue,
     scriptClasspath := Seq("../config/") ++ scriptClasspath.value,
-    dockerfile in docker := {
+    docker / dockerfile := {
       val appDir: File = stage.value
       val targetDir    = "/app"
 
@@ -114,7 +118,7 @@ lazy val compilerServer = project
         copy(appDir, targetDir)
       }
     },
-    imageNames in docker := Seq(
+    docker / imageNames := Seq(
       ImageName(
         namespace = Some("scalafiddle"),
         repository = s"scalafiddle-core-${scalaBinaryVersion.value}",
@@ -128,7 +132,8 @@ lazy val compilerServer = project
     )
   )
 
-lazy val router = (project in file("router"))
+lazy val router = project
+  .in(file("router"))
   .enablePlugins(JavaAppPackaging)
   .enablePlugins(sbtdocker.DockerPlugin)
   .dependsOn(shared)
@@ -144,13 +149,13 @@ lazy val router = (project in file("router"))
       "org.webjars.npm"       % "js-sha1"         % "0.4.0",
       "com.lihaoyi"           %% "upickle"        % versions.upickle,
       "com.github.marklister" %% "base64"         % versions.base64,
-      "ch.megard"             %% "akka-http-cors" % "0.2.1"
+      "ch.megard"             %% "akka-http-cors" % "0.3.0"
     ) ++ kamon ++ akka ++ logging,
-    javaOptions in reStart ++= Seq("-Xmx1g"),
+    reStart / javaOptions ++= Seq("-Xmx1g"),
     scriptClasspath := Seq("../config/") ++ scriptClasspath.value,
-    resourceGenerators in Compile += Def.task {
-      // store build version in a property file
-      val file = (resourceManaged in Compile).value / "version.properties"
+    Compile / resourceGenerators += Def.task {
+      // store build a / version property file
+      val file = (Compile / resourceManaged).value / "version.properties"
       val contents =
         s"""
            |version=${version.value}
@@ -161,11 +166,11 @@ lazy val router = (project in file("router"))
       IO.write(file, contents)
       Seq(file)
     }.taskValue,
-    (resources in Compile) ++= {
-      // Seq((fullOptJS in (client, Compile)).value.data)
-      Seq((fastOptJS in (client, Compile)).value.data)
+    (Compile / resources) ++= {
+      // Seq((client / Compile / fullOptJS).value.data)
+      Seq((client / Compile / fastOptJS).value.data)
     },
-    dockerfile in docker := {
+    docker / dockerfile := {
       val appDir: File = stage.value
       val targetDir    = "/app"
 
@@ -177,7 +182,7 @@ lazy val router = (project in file("router"))
         expose(8880)
       }
     },
-    imageNames in docker := Seq(
+    docker / imageNames := Seq(
       ImageName(
         namespace = Some("scalafiddle"),
         repository = "scalafiddle-router",

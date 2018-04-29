@@ -69,22 +69,23 @@ object GlobalInitCompat {
     file.lookupName(pathParts.last, directory = directory)
   }
 
-  private def buildClassPath(absFile: AbstractFile) = new VirtualDirectoryClassPath(new VirtualDirectory(absFile.name, None){
-    override def iterator = absFile.iterator
+  private def buildClassPath(absFile: AbstractFile) =
+    new VirtualDirectoryClassPath(new VirtualDirectory(absFile.name, None) {
+      override def iterator = absFile.iterator
 
-    override def lookupName(name: String, directory: Boolean) = absFile.lookupName(name, directory)
+      override def lookupName(name: String, directory: Boolean) = absFile.lookupName(name, directory)
 
-    override def subdirectoryNamed(name: String) = absFile.subdirectoryNamed(name)
-  }) {
-    override def getSubDir(packageDirName: String): Option[AbstractFile] = {
-      Option(lookupPath(absFile)(packageDirName.split('/'), directory = true))
+      override def subdirectoryNamed(name: String) = absFile.subdirectoryNamed(name)
+    }) {
+      override def getSubDir(packageDirName: String): Option[AbstractFile] = {
+        Option(lookupPath(absFile)(packageDirName.split('/'), directory = true))
+      }
+
+      override def findClassFile(className: String): Option[AbstractFile] = {
+        val relativePath = FileUtils.dirPath(className) + ".class"
+        Option(lookupPath(absFile)(relativePath.split('/'), directory = false))
+      }
     }
-
-    override def findClassFile(className: String): Option[AbstractFile] = {
-      val relativePath = FileUtils.dirPath(className) + ".class"
-      Option(lookupPath(absFile)(relativePath.split('/'), directory = false))
-    }
-  }
 
   def initGlobal(settings: Settings, reporter: StoreReporter, libs: Seq[io.AbstractFile]): nsc.Global = {
     val cp = new AggregateClassPath(libs.map(buildClassPath))
@@ -96,7 +97,7 @@ object GlobalInitCompat {
       override lazy val plugins = List[Plugin](
         new org.scalajs.core.compiler.ScalaJSPlugin(this),
         new org.scalamacros.paradise.Plugin(this),
-      new d_m.KindProjector(this)
+        new d_m.KindProjector(this)
       )
 
       override lazy val platform: ThisPlatform = new GlobalPlatform {
@@ -123,7 +124,7 @@ object GlobalInitCompat {
       override lazy val plugins = List[Plugin](
         new org.scalajs.core.compiler.ScalaJSPlugin(this),
         new org.scalamacros.paradise.Plugin(this),
-      new d_m.KindProjector(this)
+        new d_m.KindProjector(this)
       )
 
       override lazy val platform: ThisPlatform = new GlobalPlatform {
