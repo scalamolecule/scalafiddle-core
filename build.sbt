@@ -20,9 +20,7 @@ lazy val root = project
 lazy val shared = project
   .enablePlugins(ScalaJSPlugin)
   .settings(commonSettings)
-  .settings(
-    crossVersions
-  )
+  .settings(crossVersions)
 
 lazy val client = project
   .enablePlugins(ScalaJSPlugin)
@@ -54,6 +52,7 @@ lazy val page = project
 lazy val runtime = project
   .settings(commonSettings)
   .settings(
+    crossVersions,
     libraryDependencies ++= Seq(
       "org.scala-js"   %% "scalajs-library" % scalaJSVersion,
       "org.scala-lang" % "scala-reflect"    % scalaVersion.value
@@ -113,7 +112,6 @@ lazy val compilerServer = project
 
       new Dockerfile {
         from("anapsix/alpine-java:8_jdk")
-        run("apk", "add", "--update", "bash", "libc6-compat")
         entryPoint(s"$targetDir/bin/${executableScriptName.value}")
         copy(appDir, targetDir)
       }
@@ -176,7 +174,6 @@ lazy val router = project
 
       new Dockerfile {
         from("anapsix/alpine-java:8_jdk")
-        run("apk", "add", "--update", "bash", "libc6-compat")
         entryPoint(s"$targetDir/bin/${executableScriptName.value}")
         copy(appDir, targetDir)
         expose(8880)
