@@ -6,12 +6,12 @@ ThisBuild / scalafmtOnCompile := true
 
 val commonSettings = Seq(
   scalacOptions := scalacArgs,
-  scalaVersion := "2.12.5",
+  scalaVersion := "2.12.6",
   version := versions.fiddle,
   libraryDependencies ++= Seq()
 )
 
-val crossVersions = crossScalaVersions := Seq("2.12.5", "2.11.12")
+val crossVersions = crossScalaVersions := Seq("2.12.6", "2.11.12")
 
 lazy val root = project
   .in(file("."))
