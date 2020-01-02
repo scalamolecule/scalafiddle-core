@@ -11,7 +11,7 @@ val commonSettings = Seq(
   libraryDependencies ++= Seq()
 )
 
-val crossVersions = crossScalaVersions := Seq("2.12.6", "2.11.12")
+val crossVersions = crossScalaVersions := Seq("2.12.10", "2.11.12")
 
 lazy val root = project
   .in(file("."))
