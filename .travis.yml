@@ -1,9 +1,9 @@
 language: scala
 scala:
-- 2.12.5
+- 2.12.10
 sudo: false
 jdk:
-- oraclejdk8
+- openjdk8
 script:
 - sbt ++$TRAVIS_SCALA_VERSION router/test compilerServer/test
 - sbt ++2.11.12 compilerServer/test
