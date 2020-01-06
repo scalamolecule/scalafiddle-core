@@ -33,12 +33,12 @@ object ActorFlow {
     * @param bufferSize The maximum number of elements to buffer.
     * @param overflowStrategy The strategy for how to handle a buffer overflow.
     */
-  def actorRef[In, Out](props: ActorRef => Props,
-                        terminated: () => Unit,
-                        bufferSize: Int = 16,
-                        overflowStrategy: OverflowStrategy = OverflowStrategy.dropNew)(
-      implicit factory: ActorRefFactory,
-      mat: Materializer): Flow[In, Out, _] = {
+  def actorRef[In, Out](
+      props: ActorRef => Props,
+      terminated: () => Unit,
+      bufferSize: Int = 16,
+      overflowStrategy: OverflowStrategy = OverflowStrategy.dropNew
+  )(implicit factory: ActorRefFactory, mat: Materializer): Flow[In, Out, _] = {
 
     val (outActor, publisher) = Source
       .actorRef[Out](bufferSize, overflowStrategy)

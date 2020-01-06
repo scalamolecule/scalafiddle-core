@@ -92,11 +92,14 @@ class CompileActor(out: ActorRef, manager: ActorRef) extends Actor with ActorLog
                 log.debug(compiler.getLog.mkString("\n"))
                 compilationFailCounter.increment()
                 sendOut(
-                  CompilationResponse(None,
-                                      Nil,
-                                      Nil,
-                                      Seq(EditorAnnotation(0, 0, e.getMessage +: compiler.getLog, "ERROR")),
-                                      compiler.getLog.mkString("\n")))
+                  CompilationResponse(
+                    None,
+                    Nil,
+                    Nil,
+                    Seq(EditorAnnotation(0, 0, e.getMessage +: compiler.getLog, "ERROR")),
+                    compiler.getLog.mkString("\n")
+                  )
+                )
             }
 
           case CompletionRequest(id, sourceCode, _, offset) =>
@@ -146,9 +149,11 @@ class CompileActor(out: ActorRef, manager: ActorRef) extends Actor with ActorLog
     annotations
   }
 
-  def doCompile(compiler: Compiler,
-                sourceCode: String,
-                processor: Seq[VirtualScalaJSIRFile] => String): CompilationResponse = {
+  def doCompile(
+      compiler: Compiler,
+      sourceCode: String,
+      processor: Seq[VirtualScalaJSIRFile] => String
+  ): CompilationResponse = {
     val output = mutable.Buffer.empty[String]
 
     val (logSpam, res) = compiler.compile(output.append(_))

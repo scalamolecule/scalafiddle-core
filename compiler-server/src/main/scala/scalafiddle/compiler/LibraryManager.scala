@@ -46,26 +46,30 @@ class LibraryManager(val depLibs: Seq[ExtLib]) {
   val log     = LoggerFactory.getLogger(getClass)
   val timeout = 60.seconds
 
+  def resourceStream(name: String, alternative: String = ""): (String, InputStream) = {
+    val stream = getClass.getResourceAsStream(name)
+    if (stream == null) {
+      val stream = getClass.getResourceAsStream(alternative)
+      if (stream == null) {
+        throw new Exception(s"Classpath loading failed, jar $name or $alternative not found")
+      }
+      alternative -> stream
+    } else name -> stream
+  }
+
   //log.debug(s"Libraries: ${depLibs.map(lib => s"${lib.toString}/${lib.jsLibs}/${lib.cssLibs}").mkString("\n")}")
-  val baseLibs = Seq(
-    s"/scala-library-${Config.scalaVersion}.jar",
-    s"/scala-reflect-${Config.scalaVersion}.jar",
-    s"/scalajs-library_${Config.scalaMainVersion}-${Config.scalaJSVersion}.jar",
-    s"/page_sjs${Config.scalaJSMainVersion}_${Config.scalaMainVersion}-${Config.version}.jar"
+  def baseLibs = Seq(
+    resourceStream(s"/scala-library-${Config.scalaVersion}.jar", s"/scala-library.jar"),
+    resourceStream(s"/scala-reflect-${Config.scalaVersion}.jar", s"/scala-reflect.jar"),
+    resourceStream(s"/scalajs-library_${Config.scalaMainVersion}-${Config.scalaJSVersion}.jar"),
+    resourceStream(s"/page_sjs${Config.scalaJSMainVersion}_${Config.scalaMainVersion}-${Config.version}.jar")
   )
 
   val sjsVersion = s"_sjs${Config.scalaJSMainVersion}_${Config.scalaMainVersion}"
 
   val commonJars = {
     log.debug("Loading common libraries...")
-    val jarFiles = baseLibs.map { name =>
-      val stream = getClass.getResourceAsStream(name)
-      log.debug(s"Loading resource $name")
-      if (stream == null) {
-        throw new Exception(s"Classpath loading failed, jar $name not found")
-      }
-      name -> stream
-    }.seq
+    val jarFiles = baseLibs
 
     val bootFiles = for {
       prop <- Seq("sun.boot.class.path")
@@ -159,9 +163,12 @@ class LibraryManager(val depLibs: Seq[ExtLib]) {
       val commonLibs = commonJars.map { case (jar, _) => jar -> commonJarFlatFiles(jar) }
       val extLibMap = results.map {
         case (lib, resolution) =>
-          (lib,
-           resolution.minDependencies.flatMap(dep =>
-             jarFlatFiles.find(_._1.moduleVersion == dep.moduleVersion).map(ff => (dep, ff._2))))
+          (
+            lib,
+            resolution.minDependencies.flatMap(dep =>
+              jarFlatFiles.find(_._1.moduleVersion == dep.moduleVersion).map(ff => (dep, ff._2))
+            )
+          )
       }.toMap
 
       (commonLibs, extLibMap, ffs)

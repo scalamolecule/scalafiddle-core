@@ -6,7 +6,7 @@ ThisBuild / scalafmtOnCompile := true
 
 val commonSettings = Seq(
   scalacOptions := scalacArgs,
-  scalaVersion := "2.12.6",
+  scalaVersion := "2.12.10",
   version := versions.fiddle,
   libraryDependencies ++= Seq()
 )
@@ -89,7 +89,7 @@ lazy val compilerServer = project
         (page / Compile / packageBin).value
       )
     },
-    resolvers += "Typesafe Repo" at "http://repo.typesafe.com/typesafe/releases/",
+    resolvers += "Typesafe Repo" at "https://repo.typesafe.com/typesafe/releases/",
     reStart / javaOptions ++= Seq("-Xmx3g", "-Xss4m"),
     Universal / javaOptions ++= Seq("-J-Xss4m"),
     Compile / resourceGenerators += Def.task {

@@ -83,7 +83,8 @@ object Librarian {
             lib.compileTimeOnly,
             versionDef.jsDeps,
             versionDef.cssDeps
-          )) ++ extraDeps
+          )
+        ) ++ extraDeps
       }
     }).flatten.groupBy(_._1).map { case (version, libs) => version -> libs.map(_._2).toSet }
   }

@@ -6,8 +6,8 @@ addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.3.2")
 
 addSbtPlugin("se.marcuslonnberg" % "sbt-docker" % "1.4.1")
 
-addSbtPlugin("io.spray" % "sbt-revolver" % "0.9.0")
+addSbtPlugin("io.spray" % "sbt-revolver" % "0.9.1")
 
-addSbtPlugin("com.geirsson" % "sbt-scalafmt" % "1.5.1")
+addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.3.0")
 
-addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.3.4")
+addSbtPlugin("com.timushev.sbt" % "sbt-updates" % "0.5.0")

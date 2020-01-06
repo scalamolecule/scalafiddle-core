@@ -54,8 +54,10 @@ object Static {
       case Some("dark") =>
         ("/styles-dark.css", img(src := Config.logoDark, attr("srcset") := s"${Config.logoDark} 1x,${Config.logoDark2x} 2x"))
       case _ =>
-        ("/styles-light.css",
-         img(src := Config.logoLight, attr("srcset") := s"${Config.logoLight} 1x,${Config.logoLight2x} 2x"))
+        (
+          "/styles-light.css",
+          img(src := Config.logoLight, attr("srcset") := s"${Config.logoLight} 1x,${Config.logoLight2x} 2x")
+        )
     }
     val fullOpt = paramMap.contains("fullOpt")
     val passive = paramMap.contains("passive")
@@ -215,13 +217,16 @@ object Static {
              |ga('create', '${Config.analyticsID}', 'auto')}, 0);
              |window.setTimeout(function() {ga('send', 'pageview')}, 1000);
              |""".stripMargin
-            else "")
+            else ""
+          )
         ),
         script(`type` := "text/javascript", raw(baseEnv)),
         script(
           `type` := "text/javascript",
           raw(
-            s"""Client.main($fullOpt, "${Config.scalaFiddleSourceUrl}", "${Config.scalaFiddleEditUrl}", baseEnv, $passive)"""))
+            s"""Client.main($fullOpt, "${Config.scalaFiddleSourceUrl}", "${Config.scalaFiddleEditUrl}", baseEnv, $passive)"""
+          )
+        )
       )
     ).toString()
     pageHtml.getBytes(StandardCharsets.UTF_8)

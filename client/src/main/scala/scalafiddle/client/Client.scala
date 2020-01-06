@@ -27,13 +27,15 @@ object SHA1 extends js.Object {
   def apply(s: String): String = js.native
 }
 
-case class SourceFile(name: String,
-                      code: String,
-                      prefix: List[String] = Nil,
-                      postfix: List[String] = Nil,
-                      indent: Int = 0,
-                      fiddleId: Option[String] = None,
-                      id: String = UUID.randomUUID().toString)
+case class SourceFile(
+    name: String,
+    code: String,
+    prefix: List[String] = Nil,
+    postfix: List[String] = Nil,
+    indent: Int = 0,
+    fiddleId: Option[String] = None,
+    id: String = UUID.randomUUID().toString
+)
 
 @js.native
 trait EditorAnnotationJS extends js.Object {
@@ -239,7 +241,8 @@ class Client(editURL: String) {
     Client.clear()
     Client.printOutput(Client.tag("h2")("Full source code"))
     Client.printOutput(
-      Client.tag("pre")(reconstructSource(editor.code, currentSourceFile).replace("&", "&amp;") replace ("<", "&lt;")))
+      Client.tag("pre")(reconstructSource(editor.code, currentSourceFile).replace("&", "&amp;") replace ("<", "&lt;"))
+    )
   }
 
   // attach handlers to icons
@@ -295,10 +298,12 @@ class Client(editURL: String) {
       case l if l.nonEmpty => l.min
       case _               => 0
     }
-    src.copy(code = main.reverse.map(_.drop(indent)).mkString("", "\n", "\n"),
-             prefix = pre.reverse,
-             postfix = post.reverse,
-             indent = indent)
+    src.copy(
+      code = main.reverse.map(_.drop(indent)).mkString("", "\n", "\n"),
+      prefix = pre.reverse,
+      postfix = post.reverse,
+      indent = indent
+    )
   }
 
   def setSources(sources: Seq[SourceFile]): Unit = {
@@ -468,11 +473,13 @@ object Client {
         |""".stripMargin
 
   @JSExport
-  def main(useFull: Boolean,
-           scalaFiddleSourceUrl: String,
-           scalaFiddleEditUrl: String,
-           baseEnv: String,
-           passive: Boolean): Unit = {
+  def main(
+      useFull: Boolean,
+      scalaFiddleSourceUrl: String,
+      scalaFiddleEditUrl: String,
+      baseEnv: String,
+      passive: Boolean
+  ): Unit = {
     initializing = true
     clear()
     Editor.initEditor

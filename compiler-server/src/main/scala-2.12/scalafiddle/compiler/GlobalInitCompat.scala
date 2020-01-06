@@ -114,9 +114,11 @@ object GlobalInitCompat {
     }
   }
 
-  def initInteractiveGlobal(settings: Settings,
-                            reporter: StoreReporter,
-                            libs: Seq[io.AbstractFile]): nsc.interactive.Global = {
+  def initInteractiveGlobal(
+      settings: Settings,
+      reporter: StoreReporter,
+      libs: Seq[io.AbstractFile]
+  ): nsc.interactive.Global = {
     val cp = new AggregateClassPath(libs.map(buildClassPath))
     new nsc.interactive.Global(settings, reporter) { g =>
       override def classPath = cp
