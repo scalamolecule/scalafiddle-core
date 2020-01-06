@@ -30,11 +30,11 @@ class Compiler(libManager: LibraryManager, code: String) { self =>
   private lazy val extLibs = {
     val userLibs = extLibDefs
       .map(lib => ExtLib(lib))
-      .map(
-        extLib =>
-          libManager.depLibs
-            .find(_.sameAs(extLib))
-            .getOrElse(throw new IllegalArgumentException(s"Library $extLib is not allowed")))
+      .map(extLib =>
+        libManager.depLibs
+          .find(_.sameAs(extLib))
+          .getOrElse(throw new IllegalArgumentException(s"Library $extLib is not allowed"))
+      )
       .toList
 
     log.debug(s"Full dependencies: $userLibs")
@@ -158,13 +158,16 @@ class Compiler(libManager: LibraryManager, code: String) { self =>
     val output = WritableMemVirtualJSFile("output.js")
     try {
       val linker =
-        LinkerCache.getOrUpdate(libs,
-                                StandardLinker(
-                                  StandardLinker
-                                    .Config()
-                                    .withSemantics(semantics)
-                                    .withSourceMap(false)
-                                    .withClosureCompilerIfAvailable(fullOpt)))
+        LinkerCache.getOrUpdate(
+          libs,
+          StandardLinker(
+            StandardLinker
+              .Config()
+              .withSemantics(semantics)
+              .withSourceMap(false)
+              .withClosureCompilerIfAvailable(fullOpt)
+          )
+        )
       linker.link(libManager.linkerLibraries(extLibs) ++ userFiles, Nil, output, sjsLogger)
     } catch {
       case e: Throwable =>

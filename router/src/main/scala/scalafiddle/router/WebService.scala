@@ -137,7 +137,8 @@ class WebService(system: ActorSystem, cache: Cache, compilerManager: ActorRef) {
   }
 
   def cacheOr(path: String, params: Map[String, String], validator: ParamValidator, expiration: Int)(
-      value: => Future[CacheValue])(toResponse: Array[Byte] => HttpResponse): Future[HttpResponse] = {
+      value: => Future[CacheValue]
+  )(toResponse: Array[Byte] => HttpResponse): Future[HttpResponse] = {
     validateParams(params, validator) match {
       case Some(error) =>
         cacheCounters.get(path).foreach { _.error.increment() }
@@ -259,9 +260,10 @@ class WebService(system: ActorSystem, cache: Cache, compilerManager: ActorRef) {
                       request.entity.toStrict(5.seconds).flatMap { entity =>
                         val source    = entity.data.decodeString(StandardCharsets.UTF_8)
                         val compileId = UUID.randomUUID().toString
-                        ask(compilerManager,
-                            CompletionRequest(compileId, source, clientIP.toString, paramMap("offset").toInt))
-                          .mapTo[Either[String, CompletionResponse]]
+                        ask(
+                          compilerManager,
+                          CompletionRequest(compileId, source, clientIP.toString, paramMap("offset").toInt)
+                        ).mapTo[Either[String, CompletionResponse]]
                           .map {
                             case Right(response: CompletionResponse) =>
                               HttpResponse(entity = HttpEntity(`application/json`, write(response).getBytes("UTF-8")))
@@ -287,7 +289,8 @@ class WebService(system: ActorSystem, cache: Cache, compilerManager: ActorRef) {
           parameterMap { paramMap =>
             complete {
               cacheOr("embed", paramMap, embedValidator, 3600)(
-                Future.successful(CacheResult(Static.renderPage(Config.clientFiles, paramMap)))) { data =>
+                Future.successful(CacheResult(Static.renderPage(Config.clientFiles, paramMap)))
+              ) { data =>
                 HttpResponse(entity = HttpEntity(`text/html` withCharset `UTF-8`, data))
               }
             }
@@ -296,7 +299,8 @@ class WebService(system: ActorSystem, cache: Cache, compilerManager: ActorRef) {
           parameterMap { paramMap =>
             complete {
               cacheOr("codeframe", paramMap, codeframeValidator, 3600)(
-                Future.successful(CacheResult(Static.renderCodeFrame(paramMap)))) { data =>
+                Future.successful(CacheResult(Static.renderCodeFrame(paramMap)))
+              ) { data =>
                 HttpResponse(entity = HttpEntity(`text/html` withCharset `UTF-8`, data))
               }
             }

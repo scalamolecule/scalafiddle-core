@@ -26,7 +26,8 @@ class Manager extends Actor with ActorLogging {
     val (upgradeResponse, _) =
       Http().singleWebSocketRequest(
         WebSocketRequest(s"${Config.routerUrl}?secret=${Config.secret}&scalaVersion=${Config.scalaMainVersion}"),
-        wsFlow)
+        wsFlow
+      )
     upgradeResponse.map { upgrade =>
       // just like a regular http request we can access response status which is available via upgrade.response.status
       // status code 101 (Switching Protocols) indicates that server support WebSockets

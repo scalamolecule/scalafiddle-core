@@ -12,9 +12,11 @@ import scalafiddle.shared._
   * Everything related to setting up the Ace editor to
   * do exactly what we want.
   */
-class Editor(bindings: Seq[(String, String, () => Any)],
-             completions: () => Future[CompletionResponse],
-             implicit val logger: Logger) {
+class Editor(
+    bindings: Seq[(String, String, () => Any)],
+    completions: () => Future[CompletionResponse],
+    implicit val logger: Logger
+) {
   lazy val Autocomplete = js.Dynamic.global.require("ace/autocomplete").Autocomplete
   def sess              = editor.getSession()
   def aceDoc            = sess.getDocument()
@@ -70,7 +72,8 @@ class Editor(bindings: Seq[(String, String, () => Any)],
             "sender" -> "editor|cli"
           ),
           "exec" -> func
-        ))
+        )
+      )
     }
 
     ed.completers = js.Array(
@@ -94,7 +97,8 @@ class Editor(bindings: Seq[(String, String, () => Any)],
             }
           }
         )
-        .value)
+        .value
+    )
 
     ed.getSession().setTabSize(2)
 

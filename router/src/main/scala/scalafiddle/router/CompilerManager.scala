@@ -42,7 +42,8 @@ class CompilerManager extends Actor with ActorLogging {
     // set internal HTTP agent to something valid
     System.setProperty(
       "http.agent",
-      "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/28.0.1500.29 Safari/537.36")
+      "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/28.0.1500.29 Safari/537.36"
+    )
     // try to load libraries
     currentLibs = loadLibraries
     if (currentLibs.isEmpty) {
@@ -60,28 +61,29 @@ class CompilerManager extends Actor with ActorLogging {
 
   def loadLibraries: Map[String, Set[ExtLib]] = {
     val url = Config.extLibsUrl
-    val result: Map[String, Set[ExtLib]] = try {
-      log.debug(s"Loading libraries from $url")
-      val data = if (url.startsWith("file:")) {
-        // load from file system
-        scala.io.Source.fromFile(url.drop(5), "UTF-8").mkString
-      } else if (url.startsWith("http")) {
-        // load from internet
-        scala.io.Source.fromURL(url, "UTF-8").mkString
-      } else {
-        // load from resources
-        scala.io.Source.fromInputStream(getClass.getResourceAsStream(url), "UTF-8").mkString
+    val result: Map[String, Set[ExtLib]] =
+      try {
+        log.debug(s"Loading libraries from $url")
+        val data = if (url.startsWith("file:")) {
+          // load from file system
+          scala.io.Source.fromFile(url.drop(5), "UTF-8").mkString
+        } else if (url.startsWith("http")) {
+          // load from internet
+          scala.io.Source.fromURL(url, "UTF-8").mkString
+        } else {
+          // load from resources
+          scala.io.Source.fromInputStream(getClass.getResourceAsStream(url), "UTF-8").mkString
+        }
+        val extLibs = Librarian.loadLibraries(data)
+        // join with default libs
+        extLibs.map {
+          case (version, libs) => version -> (libs ++ Config.defaultLibs.getOrElse(version, Nil))
+        }
+      } catch {
+        case e: Throwable =>
+          log.error(e, s"Unable to load libraries")
+          Map.empty
       }
-      val extLibs = Librarian.loadLibraries(data)
-      // join with default libs
-      extLibs.map {
-        case (version, libs) => version -> (libs ++ Config.defaultLibs.getOrElse(version, Nil))
-      }
-    } catch {
-      case e: Throwable =>
-        log.error(e, s"Unable to load libraries")
-        Map.empty
-    }
     result.foreach { case (version, libs) => log.debug(s"${libs.size} libraries for Scala $version") }
     result
   }
@@ -108,7 +110,8 @@ class CompilerManager extends Actor with ActorLogging {
     val versionLibs = currentLibs.getOrElse(scalaVersion, Set.empty)
     // log.debug(s"Libraries:\n$versionLibs")
     libs.foreach(lib =>
-      if (!versionLibs.exists(_.sameAs(lib))) throw new IllegalArgumentException(s"Library $lib is not supported"))
+      if (!versionLibs.exists(_.sameAs(lib))) throw new IllegalArgumentException(s"Library $lib is not supported")
+    )
     // select the best available compiler server based on:
     // 1) time of last activity
     // 2) set of libraries
@@ -164,14 +167,16 @@ class CompilerManager extends Actor with ActorLogging {
 
   def receive = {
     case RegisterCompiler(id, compilerService, scalaVersion) =>
-      compilers += id -> CompilerInfo(id,
-                                      compilerService,
-                                      scalaVersion,
-                                      CompilerState.Initializing,
-                                      now,
-                                      "unknown",
-                                      Set.empty,
-                                      now)
+      compilers += id -> CompilerInfo(
+        id,
+        compilerService,
+        scalaVersion,
+        CompilerState.Initializing,
+        now,
+        "unknown",
+        Set.empty,
+        now
+      )
       log.debug(s"Registered compiler $id for Scala $scalaVersion")
       // send current libraries
       compilerService ! UpdateLibraries(currentLibs.getOrElse(scalaVersion, Set.empty).toList)
@@ -260,13 +265,15 @@ class CompilerManager extends Actor with ActorLogging {
 object CompilerManager {
   def props = Props(new CompilerManager)
 
-  case class CompilerInfo(id: String,
-                          compilerService: ActorRef,
-                          scalaVersion: String,
-                          state: CompilerState,
-                          lastActivity: Long,
-                          lastClient: String,
-                          lastLibs: Set[ExtLib],
-                          lastSeen: Long)
+  case class CompilerInfo(
+      id: String,
+      compilerService: ActorRef,
+      scalaVersion: String,
+      state: CompilerState,
+      lastActivity: Long,
+      lastClient: String,
+      lastLibs: Set[ExtLib],
+      lastSeen: Long
+  )
 
 }
