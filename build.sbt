@@ -71,8 +71,6 @@ lazy val compilerServer = project
       "org.scala-js"           %% "scalajs-tools"   % scalaJSVersion,
       "org.scalamacros"        %% "paradise"        % versions.macroParadise cross CrossVersion.full,
       "org.spire-math"         %% "kind-projector"  % versions.kindProjector cross CrossVersion.binary,
-      "org.scala-lang.modules" %% "scala-async"     % versions.async % "provided",
-      "com.lihaoyi"            %% "scalatags"       % versions.scalatags,
       "com.lihaoyi"            %% "upickle"         % versions.upickle,
       "io.get-coursier"        %% "coursier"        % versions.coursier,
       "io.get-coursier"        %% "coursier-cache"  % versions.coursier,
