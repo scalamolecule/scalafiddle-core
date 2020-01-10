@@ -5,14 +5,12 @@ import Settings._
 // shadow sbt-scalajs' crossProject and CrossType from Scala.js 0.6.x
 import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
 
-ThisBuild / scalafmtOnCompile := true
-
-val commonSettings = Seq(
+inThisBuild(Def.settings(
+  scalafmtOnCompile := true,
   scalacOptions := scalacArgs,
   scalaVersion := "2.12.10",
   version := versions.fiddle,
-  libraryDependencies ++= Seq()
-)
+))
 
 val crossVersions = crossScalaVersions := Seq("2.12.10", "2.11.12")
 
@@ -22,13 +20,11 @@ lazy val root = project
 
 lazy val shared = crossProject(JSPlatform, JVMPlatform)
   .crossType(CrossType.Pure)
-  .settings(commonSettings)
   .settings(crossVersions)
 
 lazy val client = project
   .enablePlugins(ScalaJSPlugin)
   .dependsOn(shared.js)
-  .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
       "org.scala-js"          %%% "scalajs-dom" % versions.dom,
@@ -43,7 +39,6 @@ lazy val client = project
 
 lazy val page = project
   .enablePlugins(ScalaJSPlugin)
-  .settings(commonSettings)
   .settings(
     crossVersions,
     libraryDependencies ++= Seq(
@@ -53,7 +48,6 @@ lazy val page = project
   )
 
 lazy val runtime = project
-  .settings(commonSettings)
   .settings(
     crossVersions,
     libraryDependencies ++= Seq(
@@ -67,7 +61,6 @@ lazy val compilerServer = project
   .dependsOn(shared.jvm)
   .enablePlugins(JavaAppPackaging)
   .enablePlugins(sbtdocker.DockerPlugin)
-  .settings(commonSettings)
   .settings(Revolver.settings: _*)
   .settings(
     name := "scalafiddle-core",
@@ -139,7 +132,6 @@ lazy val router = project
   .enablePlugins(sbtdocker.DockerPlugin)
   .dependsOn(shared.jvm)
   .settings(Revolver.settings: _*)
-  .settings(commonSettings)
   .settings(
     name := "scalafiddle-router",
     libraryDependencies ++= Seq(
