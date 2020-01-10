@@ -61,7 +61,7 @@ lazy val runtime = project
 
 lazy val compilerServer = project
   .in(file("compiler-server"))
-  .dependsOn(shared, page)
+  .dependsOn(shared)
   .enablePlugins(JavaAppPackaging)
   .enablePlugins(sbtdocker.DockerPlugin)
   .settings(commonSettings)
