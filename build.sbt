@@ -2,6 +2,9 @@ import sbt._
 import Keys._
 import Settings._
 
+// shadow sbt-scalajs' crossProject and CrossType from Scala.js 0.6.x
+import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
+
 ThisBuild / scalafmtOnCompile := true
 
 val commonSettings = Seq(
@@ -15,16 +18,16 @@ val crossVersions = crossScalaVersions := Seq("2.12.10", "2.11.12")
 
 lazy val root = project
   .in(file("."))
-  .aggregate(shared, page, compilerServer, runtime, client, router)
+  .aggregate(shared.js, shared.jvm, page, compilerServer, runtime, client, router)
 
-lazy val shared = project
-  .enablePlugins(ScalaJSPlugin)
+lazy val shared = crossProject(JSPlatform, JVMPlatform)
+  .crossType(CrossType.Pure)
   .settings(commonSettings)
   .settings(crossVersions)
 
 lazy val client = project
   .enablePlugins(ScalaJSPlugin)
-  .dependsOn(shared)
+  .dependsOn(shared.js)
   .settings(commonSettings)
   .settings(
     libraryDependencies ++= Seq(
@@ -61,7 +64,7 @@ lazy val runtime = project
 
 lazy val compilerServer = project
   .in(file("compiler-server"))
-  .dependsOn(shared)
+  .dependsOn(shared.jvm)
   .enablePlugins(JavaAppPackaging)
   .enablePlugins(sbtdocker.DockerPlugin)
   .settings(commonSettings)
@@ -134,7 +137,7 @@ lazy val router = project
   .in(file("router"))
   .enablePlugins(JavaAppPackaging)
   .enablePlugins(sbtdocker.DockerPlugin)
-  .dependsOn(shared)
+  .dependsOn(shared.jvm)
   .settings(Revolver.settings: _*)
   .settings(commonSettings)
   .settings(
