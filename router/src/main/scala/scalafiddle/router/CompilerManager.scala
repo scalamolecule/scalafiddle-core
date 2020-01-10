@@ -2,7 +2,6 @@ package scalafiddle.router
 
 import akka.actor._
 import scalafiddle.shared._
-import upickle.default._
 
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext.Implicits.global

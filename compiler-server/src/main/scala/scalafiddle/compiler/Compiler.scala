@@ -20,7 +20,6 @@ import scalafiddle.shared.{CSSLib, ExtLib, JSLib}
 class Compiler(libManager: LibraryManager, code: String) { self =>
   private val log          = LoggerFactory.getLogger(getClass)
   private val sjsLogger    = new Log4jLogger()
-  private val blacklist    = Set("<init>")
   private val dependencyRE = """ *// \$FiddleDependency (.+)""".r
   private val codeLines    = code.replaceAll("\r", "").split('\n')
   private val extLibDefs = codeLines.collect {
@@ -67,7 +66,6 @@ class Compiler(libManager: LibraryManager, code: String) { self =>
     compiler.reporter.reset()
     val startOffset = pos
     val source      = code.take(startOffset) + "_CURSOR_ " + code.drop(startOffset)
-    val run         = new compiler.TyperRun
     val unit        = compiler.newCompilationUnit(source, "ScalaFiddle.scala")
     val richUnit    = new compiler.RichCompilationUnit(unit.source)
     //log.debug(s"Source: ${source.take(startOffset)}${scala.Console.RED}|${scala.Console.RESET}${source.drop(startOffset)}")

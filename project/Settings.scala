@@ -11,7 +11,8 @@ object Settings {
     "-Xlint",
     "-unchecked",
     "-deprecation",
-    "-feature"
+    "-feature",
+    "-Xfatal-warnings"
   )
 
   /** Declare global dependency versions here to avoid mismatches in multi part dependencies */
