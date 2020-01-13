@@ -7,11 +7,15 @@ jdk:
 script:
 - sbt ++$TRAVIS_SCALA_VERSION router/test compilerServer/test
 - sbt ++2.11.12 compilerServer/test
-# Tricks to avoid unnecessary cache updates, from
-# http://www.scala-sbt.org/0.13/docs/Travis-CI-with-sbt.html
-- find $HOME/.sbt -name "*.lock" | xargs rm
-- find $HOME/.ivy2 -name "ivydata-*.properties" | xargs rm
+
+# Set up caches, taken from
+# https://www.scala-sbt.org/1.x/docs/Travis-CI-with-sbt.html
 cache:
   directories:
+    - $HOME/.cache/coursier
     - $HOME/.ivy2/cache
-    - $HOME/.sbt/boot/
+    - $HOME/.sbt
+before_cache:
+  - rm -fv $HOME/.ivy2/.sbt.ivy.lock
+  - find $HOME/.ivy2/cache -name "ivydata-*.properties" -print -delete
+  - find $HOME/.sbt -name "*.lock" -print -delete

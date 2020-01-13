@@ -2,30 +2,29 @@ import sbt._
 import Keys._
 import Settings._
 
-ThisBuild / scalafmtOnCompile := true
+// shadow sbt-scalajs' crossProject and CrossType from Scala.js 0.6.x
+import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
 
-val commonSettings = Seq(
+inThisBuild(Def.settings(
+  scalafmtOnCompile := true,
   scalacOptions := scalacArgs,
   scalaVersion := "2.12.10",
   version := versions.fiddle,
-  libraryDependencies ++= Seq()
-)
+))
 
 val crossVersions = crossScalaVersions := Seq("2.12.10", "2.11.12")
 
 lazy val root = project
   .in(file("."))
-  .aggregate(shared, page, compilerServer, runtime, client, router)
+  .aggregate(shared.js, shared.jvm, page, compilerServer, runtime, client, router)
 
-lazy val shared = project
-  .enablePlugins(ScalaJSPlugin)
-  .settings(commonSettings)
+lazy val shared = crossProject(JSPlatform, JVMPlatform)
+  .crossType(CrossType.Pure)
   .settings(crossVersions)
 
 lazy val client = project
   .enablePlugins(ScalaJSPlugin)
-  .dependsOn(shared)
-  .settings(commonSettings)
+  .dependsOn(shared.js)
   .settings(
     libraryDependencies ++= Seq(
       "org.scala-js"          %%% "scalajs-dom" % versions.dom,
@@ -40,7 +39,6 @@ lazy val client = project
 
 lazy val page = project
   .enablePlugins(ScalaJSPlugin)
-  .settings(commonSettings)
   .settings(
     crossVersions,
     libraryDependencies ++= Seq(
@@ -50,7 +48,6 @@ lazy val page = project
   )
 
 lazy val runtime = project
-  .settings(commonSettings)
   .settings(
     crossVersions,
     libraryDependencies ++= Seq(
@@ -61,10 +58,9 @@ lazy val runtime = project
 
 lazy val compilerServer = project
   .in(file("compiler-server"))
-  .dependsOn(shared, page)
+  .dependsOn(shared.jvm)
   .enablePlugins(JavaAppPackaging)
   .enablePlugins(sbtdocker.DockerPlugin)
-  .settings(commonSettings)
   .settings(Revolver.settings: _*)
   .settings(
     name := "scalafiddle-core",
@@ -75,8 +71,6 @@ lazy val compilerServer = project
       "org.scala-js"           %% "scalajs-tools"   % scalaJSVersion,
       "org.scalamacros"        %% "paradise"        % versions.macroParadise cross CrossVersion.full,
       "org.spire-math"         %% "kind-projector"  % versions.kindProjector cross CrossVersion.binary,
-      "org.scala-lang.modules" %% "scala-async"     % versions.async % "provided",
-      "com.lihaoyi"            %% "scalatags"       % versions.scalatags,
       "com.lihaoyi"            %% "upickle"         % versions.upickle,
       "io.get-coursier"        %% "coursier"        % versions.coursier,
       "io.get-coursier"        %% "coursier-cache"  % versions.coursier,
@@ -134,9 +128,8 @@ lazy val router = project
   .in(file("router"))
   .enablePlugins(JavaAppPackaging)
   .enablePlugins(sbtdocker.DockerPlugin)
-  .dependsOn(shared)
+  .dependsOn(shared.jvm)
   .settings(Revolver.settings: _*)
-  .settings(commonSettings)
   .settings(
     name := "scalafiddle-router",
     libraryDependencies ++= Seq(

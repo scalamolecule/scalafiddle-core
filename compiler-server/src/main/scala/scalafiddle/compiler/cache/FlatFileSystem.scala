@@ -1,10 +1,10 @@
 package scalafiddle.compiler.cache
 
 import java.io.{FileOutputStream, InputStream}
-import java.nio.file.Path
+import java.nio.charset.StandardCharsets
+import java.nio.file.{Files, Path}
 import java.util.zip.{ZipEntry, ZipInputStream}
 
-import com.google.common.io.Files
 import org.slf4j.LoggerFactory
 import org.xerial.snappy.Snappy
 import upickle.default._
@@ -13,7 +13,6 @@ import xerial.larray.mmap.MMapMode
 
 import scala.io.Source
 import scala.reflect.io.Streamable
-import scala.scalajs.niocharset.StandardCharsets
 
 case class FlatFile(path: String, offset: Long, compressedSize: Int, origSize: Int)
 
@@ -69,7 +68,8 @@ object FlatFileSystem {
 
   private val validExtensions = Set("class", "sjsir")
   private def validFile(entry: ZipEntry) = {
-    !entry.isDirectory && validExtensions.contains(Files.getFileExtension(entry.getName))
+    !entry.isDirectory &&
+    validExtensions.contains(com.google.common.io.Files.getFileExtension(entry.getName))
   }
 
   def build(location: Path, jars: Seq[(String, InputStream)]): FlatFileSystem = {
@@ -112,7 +112,7 @@ object FlatFileSystem {
 
     val finalJars = existingJars ++ addedJars
     val json      = write(finalJars)
-    Files.write(json, location.resolve("index.json").toFile, StandardCharsets.UTF_8)
+    Files.write(location.resolve("index.json"), java.util.Arrays.asList(json), StandardCharsets.UTF_8)
 
     val data = LArray.mmap(location.resolve("data").toFile, MMapMode.READ_ONLY)
     new FlatFileSystem(data, finalJars, createIndex(finalJars))

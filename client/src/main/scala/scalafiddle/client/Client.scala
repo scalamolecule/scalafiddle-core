@@ -1,5 +1,6 @@
 package scalafiddle.client
 
+import java.nio.charset.StandardCharsets
 import java.util.UUID
 
 import org.scalajs.dom
@@ -11,7 +12,6 @@ import scala.scalajs.concurrent.JSExecutionContext.Implicits.queue
 import scala.scalajs.js
 import scala.scalajs.js.annotation.{JSExport, JSExportTopLevel, JSGlobal}
 import scala.scalajs.js.typedarray.Uint8Array
-import scala.scalajs.niocharset.StandardCharsets
 import scala.util.Success
 import scalafiddle.shared.{CompilationResponse, CompletionResponse, EditorAnnotation}
 
