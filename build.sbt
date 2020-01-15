@@ -36,7 +36,11 @@ lazy val client = project
     // rename output always to -opt.js
     Compile / fastOptJS / artifactPath := ((Compile / fastOptJS / crossTarget).value /
       ((fastOptJS / moduleName).value + "-opt.js")),
-    relativeSourceMaps := true
+    scalaJSLinkerConfig := {
+      val artifactPathURI = (Compile / fastOptJS / artifactPath).value.toURI()
+      scalaJSLinkerConfig.value
+        .withRelativizeSourceMapBase(Some(artifactPathURI))
+    }
   )
 
 /* This project is configured so that it *compiles* as if it were a Scala.js
