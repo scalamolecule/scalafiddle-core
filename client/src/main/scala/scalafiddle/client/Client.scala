@@ -128,19 +128,18 @@ class Client(editURL: String) {
   }
 
   def encodeSource(source: String): String = {
-    import com.github.marklister.base64.Base64._
     import js.JSConverters._
 
-    implicit def scheme: B64Scheme = base64Url
-    val fullSource                 = source.getBytes(StandardCharsets.UTF_8)
-    val compressedBuffer           = new Gzip(fullSource.toJSArray).compress()
-    val compressedSource           = new Array[Byte](compressedBuffer.length)
-    var i                          = 0
-    while (i < compressedBuffer.length) {
-      compressedSource(i) = compressedBuffer.get(i).toByte
-      i += 1
+    val fullSource           = source.getBytes(StandardCharsets.UTF_8)
+    val compressedTypedArray = new Gzip(fullSource.toJSArray).compress()
+    val compressedBuffer     = js.typedarray.TypedArrayBuffer.wrap(compressedTypedArray.buffer)
+    val base64EncodedBuffer  = java.util.Base64.getUrlEncoder().encode(compressedBuffer)
+
+    var base64EncodedString = ""
+    while (base64EncodedBuffer.hasRemaining()) {
+      base64EncodedString += base64EncodedBuffer.get().toChar
     }
-    Encoder(compressedSource).toBase64
+    base64EncodedString
   }
 
   def readCompilationResponse(jsonStr: String): CompilationResponse = {
