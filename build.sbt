@@ -30,8 +30,7 @@ lazy val client = project
   .dependsOn(shared.js)
   .settings(
     libraryDependencies ++= Seq(
-      "org.scala-js"          %%% "scalajs-dom" % versions.dom,
-      "com.github.marklister" %%% "base64"      % versions.base64
+      "org.scala-js" %%% "scalajs-dom" % versions.dom
     ),
     //Compile / fullOptJS / scalaJSLinkerConfig ~= { _.withClosureCompilerIfAvailable(false) },
     // rename output always to -opt.js
