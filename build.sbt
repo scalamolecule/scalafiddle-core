@@ -5,6 +5,9 @@ import Settings._
 // shadow sbt-scalajs' crossProject and CrossType from Scala.js 0.6.x
 import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
 
+val scalaJS06xVersion = "0.6.31"
+val scalaJS06xCrossVersion = CrossVersion.binaryWith(prefix = "sjs0.6_", suffix = "")
+
 inThisBuild(Def.settings(
   scalafmtOnCompile := true,
   scalacOptions := scalacArgs,
@@ -37,21 +40,36 @@ lazy val client = project
     relativeSourceMaps := true
   )
 
+/* This project is configured so that it *compiles* as if it were a Scala.js
+ * project (with the Scala.js compiler plugin, and the Scala.js library on the
+ * classpath) but without using the sbt plugin `ScalaJSPlugin`. We do not link
+ * it from sbt (only programmatically from a compiler service) so that is not
+ * necessary. This setup allows to decouple the version of Scala.js used for
+ * `page` from the one used for `client` and its transitive dependencies.
+ */
 lazy val page = project
-  .enablePlugins(ScalaJSPlugin)
   .settings(
     crossVersions,
+    platformDepsCrossVersion := scalaJS06xCrossVersion,
+    crossVersion := scalaJS06xCrossVersion,
+    addCompilerPlugin("org.scala-js" % "scalajs-compiler" % scalaJS06xVersion cross CrossVersion.full),
     libraryDependencies ++= Seq(
-      "org.scala-js" %%% "scalajs-dom" % versions.dom,
-      "com.lihaoyi"  %%% "scalatags"   % versions.scalatags
+      "org.scala-js" %% "scalajs-library" % scalaJS06xVersion,
+      "org.scala-js" %%% "scalajs-dom"    % versions.dom,
+      "com.lihaoyi"  %%% "scalatags"      % versions.scalatags
     )
   )
 
+/* This project is not compiled. It is only used to easily resolve
+ * dependencies.
+ * TODO We might want to replace this setup with direct usage of the
+ * librarymanagement API.
+ */
 lazy val runtime = project
   .settings(
     crossVersions,
     libraryDependencies ++= Seq(
-      "org.scala-js"   %% "scalajs-library" % scalaJSVersion,
+      "org.scala-js"   %% "scalajs-library" % scalaJS06xVersion,
       "org.scala-lang" % "scala-reflect"    % scalaVersion.value
     )
   )
@@ -67,8 +85,8 @@ lazy val compilerServer = project
     crossVersions,
     libraryDependencies ++= Seq(
       "org.scala-lang"         % "scala-compiler"   % scalaVersion.value,
-      "org.scala-js"           % "scalajs-compiler" % scalaJSVersion cross CrossVersion.full,
-      "org.scala-js"           %% "scalajs-tools"   % scalaJSVersion,
+      "org.scala-js"           % "scalajs-compiler" % scalaJS06xVersion cross CrossVersion.full,
+      "org.scala-js"           %% "scalajs-tools"   % scalaJS06xVersion,
       "org.scalamacros"        %% "paradise"        % versions.macroParadise cross CrossVersion.full,
       "org.spire-math"         %% "kind-projector"  % versions.kindProjector cross CrossVersion.binary,
       "com.lihaoyi"            %% "upickle"         % versions.upickle,
@@ -93,7 +111,7 @@ lazy val compilerServer = project
         s"""
            |version=${version.value}
            |scalaVersion=${scalaVersion.value}
-           |scalaJSVersion=$scalaJSVersion
+           |scalaJSVersion=$scalaJS06xVersion
            |aceVersion=${versions.ace}
            |""".stripMargin
       IO.write(file, contents)
@@ -151,7 +169,7 @@ lazy val router = project
         s"""
            |version=${version.value}
            |scalaVersion=${scalaVersion.value}
-           |scalaJSVersion=$scalaJSVersion
+           |scalaJSVersion=$scalaJS06xVersion
            |aceVersion=${versions.ace}
            |""".stripMargin
       IO.write(file, contents)
