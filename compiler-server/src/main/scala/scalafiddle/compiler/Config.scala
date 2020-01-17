@@ -23,11 +23,20 @@ object Config {
   protected val versionProps = new Properties()
   versionProps.load(getClass.getResourceAsStream("/version.properties"))
 
-  val version            = versionProps.getProperty("version")
-  val scalaVersion       = versionProps.getProperty("scalaVersion")
-  val scalaMainVersion   = scalaVersion.split('.').take(2).mkString(".")
-  val scalaJSVersion     = versionProps.getProperty("scalaJSVersion")
-  val scalaJSMainVersion = scalaJSVersion.split('.').take(2).mkString(".")
-  val aceVersion         = versionProps.getProperty("aceVersion")
+  val version          = versionProps.getProperty("version")
+  val scalaVersion     = versionProps.getProperty("scalaVersion")
+  val scalaMainVersion = scalaVersion.split('.').take(2).mkString(".")
+  val scalaJSVersion   = versionProps.getProperty("scalaJSVersion")
+  val aceVersion       = versionProps.getProperty("aceVersion")
+
+  val scalaJSBinVersion = {
+    /* This assumes that we don't use Scala.js 2.x or something. If it happens
+     * in the very far future, we can change this.
+     */
+    if (scalaJSVersion.startsWith("0.6."))
+      "0.6"
+    else
+      "1"
+  }
 
 }

@@ -7,7 +7,6 @@ import java.nio.file.Paths
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import org.apache.maven.artifact.versioning.ComparableVersion
-import org.scalajs.core.tools.io.{RelativeVirtualFile, _}
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.duration._
@@ -16,22 +15,7 @@ import scalafiddle.compiler.cache._
 import scalafiddle.shared.ExtLib
 import scalaz.concurrent.Task
 
-class JarEntryIRFile(outerPath: String, val relativePath: String)
-    extends MemVirtualSerializedScalaJSIRFile(s"$outerPath:$relativePath")
-    with RelativeVirtualFile
-
-class VirtualFlatJarFile(flatJar: FlatJar, ffs: FlatFileSystem) extends VirtualJarFile {
-  override def content: Array[Byte] = null
-  override def path: String         = flatJar.name
-  override def exists: Boolean      = true
-
-  override def sjsirFiles: Seq[VirtualScalaJSIRFile with RelativeVirtualFile] = {
-    flatJar.files.filter(_.path.endsWith("sjsir")).map { file =>
-      val content = ffs.load(flatJar, file.path)
-      new JarEntryIRFile(flatJar.name, file.path).withContent(content).withVersion(Some(path))
-    }
-  }
-}
+import ScalaJSCompat._
 
 /**
   * Loads the jars that make up the classpath of the scala-js-fiddle
@@ -62,10 +46,10 @@ class LibraryManager(val depLibs: Seq[ExtLib]) {
     resourceStream(s"/scala-library-${Config.scalaVersion}.jar", s"/scala-library.jar"),
     resourceStream(s"/scala-reflect-${Config.scalaVersion}.jar", s"/scala-reflect.jar"),
     resourceStream(s"/scalajs-library_${Config.scalaMainVersion}-${Config.scalaJSVersion}.jar"),
-    resourceStream(s"/page_sjs${Config.scalaJSMainVersion}_${Config.scalaMainVersion}-${Config.version}.jar")
+    resourceStream(s"/page_sjs${Config.scalaJSBinVersion}_${Config.scalaMainVersion}-${Config.version}.jar")
   )
 
-  val sjsVersion = s"_sjs${Config.scalaJSMainVersion}_${Config.scalaMainVersion}"
+  val sjsVersion = s"_sjs${Config.scalaJSBinVersion}_${Config.scalaMainVersion}"
 
   val commonJars = {
     log.debug("Loading common libraries...")
@@ -200,10 +184,8 @@ class LibraryManager(val depLibs: Seq[ExtLib]) {
   /**
     * The loaded files shaped for Scala-Js-Tools to use
     */
-  def lib4linker(file: AbstractFlatJar) = {
-    val jarFile = new VirtualFlatJarFile(file.flatJar, ffs)
-    IRFileCache.IRContainer.Jar(jarFile)
-  }
+  def lib4linker(file: AbstractFlatJar): IRContainer =
+    flatJarFileToIRContainer(file, ffs)
 
   /**
     * In memory cache of all the jars used in the compiler. This takes up some
@@ -231,15 +213,14 @@ class LibraryManager(val depLibs: Seq[ExtLib]) {
     libs
   }
 
-  val irCache      = new IRFileCache
-  val linkerCaches = new LRUCache[Seq[IRFileCache.VirtualRelativeIRFile]]("IRFiles")
+  val irCache      = ScalaJSCompat.createGlobalIRCache()
+  val linkerCaches = new LRUCache[Seq[IRFile]]("IRFiles")
 
-  def linkerLibraries(extLibs: Set[ExtLib]) = {
+  def linkerLibraries(extLibs: Set[ExtLib]): Seq[IRFile] = {
     this.synchronized {
       linkerCaches.getOrUpdate(extLibs, {
         val loadedJars = commonLibraries4linker ++ deps(extLibs).map(dep => dependency4linker(dep))
-        val cache      = irCache.newCache
-        cache.cached(loadedJars)
+        loadIRFilesInIRContainers(irCache, loadedJars)
       })
     }
   }

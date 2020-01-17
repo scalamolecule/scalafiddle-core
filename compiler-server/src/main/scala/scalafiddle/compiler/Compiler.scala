@@ -1,9 +1,5 @@
 package scalafiddle.compiler
 
-import org.scalajs.core.tools.io._
-import org.scalajs.core.tools.linker.StandardLinker
-import org.scalajs.core.tools.logging._
-import org.scalajs.core.tools.sem.Semantics
 import org.slf4j.LoggerFactory
 
 import scala.reflect.internal.util.Position
@@ -12,6 +8,8 @@ import scala.tools.nsc.Settings
 import scala.tools.nsc.reporters.StoreReporter
 import scalafiddle.compiler.cache.{AutoCompleteCache, CompilerCache, LinkerCache}
 import scalafiddle.shared.{CSSLib, ExtLib, JSLib}
+
+import ScalaJSCompat._
 
 /**
   * Handles the interaction between scala-js-fiddle and
@@ -79,7 +77,7 @@ class Compiler(libManager: LibraryManager, code: String) { self =>
     results.map(r => (r.sym.signatureString, r.symNameDropLocal.decoded)).distinct
   }
 
-  def compile(logger: String => Unit = _ => ()): (String, Option[Seq[VirtualScalaJSIRFile]]) = {
+  def compile(logger: String => Unit = _ => ()): (String, Option[Seq[IRFile]]) = {
 
     val startTime = System.nanoTime()
     log.debug("Compiling source:\n" + code)
@@ -123,9 +121,7 @@ class Compiler(libManager: LibraryManager, code: String) { self =>
           x <- vd.iterator.to[collection.immutable.Traversable]
           if x.name.endsWith(".sjsir")
         } yield {
-          val f = new MemVirtualSerializedScalaJSIRFile(x.path)
-          f.content = x.toByteArray
-          f: VirtualScalaJSIRFile
+          ScalaJSCompat.memIRFile(x.path, x.toByteArray)
         }
         (errors, Some(things.toSeq))
       }
@@ -136,43 +132,38 @@ class Compiler(libManager: LibraryManager, code: String) { self =>
     }
   }
 
-  def export(output: VirtualJSFile): String =
-    output.content
+  def export(output: MemJSFile): String =
+    memJSFileContentAsString(output)
 
-  def fastOpt(userFiles: Seq[VirtualScalaJSIRFile]): VirtualJSFile =
+  def fastOpt(userFiles: Seq[IRFile]): MemJSFile =
     link(userFiles, fullOpt = false)
 
-  def fullOpt(userFiles: Seq[VirtualScalaJSIRFile]): VirtualJSFile =
+  def fullOpt(userFiles: Seq[IRFile]): MemJSFile =
     link(userFiles, fullOpt = true)
 
-  def link(userFiles: Seq[VirtualScalaJSIRFile], fullOpt: Boolean): VirtualJSFile = {
+  def link(userFiles: Seq[IRFile], fullOpt: Boolean): MemJSFile = {
     val semantics =
       if (fullOpt) Semantics.Defaults.optimized
       else Semantics.Defaults
 
+    val linkerConfig =
+      defaultLinkerConfig
+        .withSemantics(semantics)
+        .withSourceMap(false)
+        .withClosureCompilerIfAvailable(fullOpt)
+
     // add parameters as fake libraries to make caching work correctly
     val libs = extLibs + ExtLib("semantics", "optimized", fullOpt.toString, false)
 
-    val output = WritableMemVirtualJSFile("output.js")
     try {
-      val linker =
-        LinkerCache.getOrUpdate(
-          libs,
-          StandardLinker(
-            StandardLinker
-              .Config()
-              .withSemantics(semantics)
-              .withSourceMap(false)
-              .withClosureCompilerIfAvailable(fullOpt)
-          )
-        )
-      linker.link(libManager.linkerLibraries(extLibs) ++ userFiles, Nil, output, sjsLogger)
+      val linker     = LinkerCache.getOrUpdate(libs, createLinker(linkerConfig))
+      val allIRFiles = libManager.linkerLibraries(extLibs) ++ userFiles
+      ScalaJSCompat.link(linker, allIRFiles, sjsLogger)
     } catch {
       case e: Throwable =>
         LinkerCache.remove(libs)
         throw e
     }
-    output
   }
 
   def getExtDeps: (List[JSLib], List[CSSLib]) =
