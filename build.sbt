@@ -171,8 +171,6 @@ lazy val router = project
       val contents =
         s"""
            |version=${version.value}
-           |scalaVersion=${scalaVersion.value}
-           |scalaJSVersion=$scalaJS06xVersion
            |aceVersion=${versions.ace}
            |""".stripMargin
       IO.write(file, contents)
