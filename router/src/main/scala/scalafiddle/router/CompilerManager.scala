@@ -7,7 +7,7 @@ import scala.collection.mutable
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
-case class RegisterCompiler(id: String, compilerService: ActorRef, scalaVersion: String)
+case class RegisterCompiler(id: String, compilerService: ActorRef, scalaVersion: String, scalaJSVersion: String)
 
 case class UnregisterCompiler(id: String)
 
@@ -27,10 +27,11 @@ class CompilerManager extends Actor with ActorLogging {
   val compilers          = mutable.Map.empty[String, CompilerInfo]
   var compilerQueue      = mutable.Queue.empty[(CompilerRequest, ActorRef)]
   val compilationPending = mutable.Map.empty[String, ActorRef]
-  var currentLibs        = Map.empty[String, Set[ExtLib]]
+  var currentLibs        = Map.empty[(String, String), Set[ExtLib]]
   var compilerTimer      = context.system.scheduler.schedule(5.minute, 1.minute, context.self, CheckCompilers)
   val dependencyRE       = """ *// \$FiddleDependency (.+)""".r
   val scalaVersionRE     = """ *// \$ScalaVersion (.+)""".r
+  val scalaJSVersionRE   = """ *// \$ScalaJSVersion (.+)""".r
   val defaultLibs =
     Config.defaultLibs.mapValues(_.map(lib => s"// $$FiddleDependency $lib").mkString("\n", "\n", "\n"))
 
@@ -58,9 +59,9 @@ class CompilerManager extends Actor with ActorLogging {
     super.postStop()
   }
 
-  def loadLibraries: Map[String, Set[ExtLib]] = {
+  def loadLibraries: Map[(String, String), Set[ExtLib]] = {
     val url = Config.extLibsUrl
-    val result: Map[String, Set[ExtLib]] =
+    val result: Map[(String, String), Set[ExtLib]] =
       try {
         log.debug(s"Loading libraries from $url")
         val data = if (url.startsWith("file:")) {
@@ -76,37 +77,46 @@ class CompilerManager extends Actor with ActorLogging {
         val extLibs = Librarian.loadLibraries(data)
         // join with default libs
         extLibs.map {
-          case (version, libs) => version -> (libs ++ Config.defaultLibs.getOrElse(version, Nil))
+          case (versions, libs) => versions -> (libs ++ Config.defaultLibs.getOrElse(versions._1, Nil))
         }
       } catch {
         case e: Throwable =>
           log.error(e, s"Unable to load libraries")
           Map.empty
       }
-    result.foreach { case (version, libs) => log.debug(s"${libs.size} libraries for Scala $version") }
+    result.foreach {
+      case ((scalaVersion, scalaJSVersion), libs) =>
+        log.debug(s"${libs.size} libraries for Scala $scalaVersion and Scala.js $scalaJSVersion")
+    }
     result
   }
 
-  def extractLibs(source: String): (Set[ExtLib], Option[String]) = {
+  private def extractLibs(source: String): (Set[ExtLib], String, String) = {
     val codeLines = source.replaceAll("\r", "").split('\n')
     val libs = codeLines.collect {
       case dependencyRE(dep) => ExtLib(dep)
     }.toSet
-    val version = codeLines.collectFirst {
-      case scalaVersionRE(v) => v
-    }
-    (libs, version)
+    val scalaVersion = codeLines
+      .collectFirst {
+        case scalaVersionRE(v) => v
+      }
+      .getOrElse("2.11")
+    val scalaJSVersion = codeLines
+      .collectFirst {
+        case scalaJSVersionRE(v) => v
+      }
+      .getOrElse("0.6")
+    (libs, scalaVersion, scalaJSVersion)
   }
 
   def selectCompiler(req: CompilerRequest): Option[CompilerInfo] = {
     // extract libs from the source
     // log.debug(s"Source\n${req.source}")
-    val (libs, scalaVersionOpt) = extractLibs(req.source)
-    val scalaVersion            = scalaVersionOpt.getOrElse("2.11")
+    val (libs, scalaVersion, scalaJSVersion) = extractLibs(req.source)
 
     log.debug(s"Selecting compiler for Scala $scalaVersion and libs $libs")
     // check that all libs are supported
-    val versionLibs = currentLibs.getOrElse(scalaVersion, Set.empty)
+    val versionLibs = currentLibs.getOrElse((scalaVersion, scalaJSVersion), Set.empty)
     // log.debug(s"Libraries:\n$versionLibs")
     libs.foreach(lib =>
       if (!versionLibs.exists(_.sameAs(lib))) throw new IllegalArgumentException(s"Library $lib is not supported")
@@ -115,7 +125,7 @@ class CompilerManager extends Actor with ActorLogging {
     // 1) time of last activity
     // 2) set of libraries
     compilers.values.toSeq
-      .filter(c => c.state == CompilerState.Ready && c.scalaVersion == scalaVersion)
+      .filter(c => c.state == CompilerState.Ready && c.scalaVersion == scalaVersion && c.scalaJSVersion == scalaJSVersion)
       .sortBy(_.lastActivity)
       .zipWithIndex
       .sortBy(info => if (info._1.lastLibs == libs) -1 else info._2) // use index to ensure stable sort
@@ -165,11 +175,12 @@ class CompilerManager extends Actor with ActorLogging {
   }
 
   def receive = {
-    case RegisterCompiler(id, compilerService, scalaVersion) =>
+    case RegisterCompiler(id, compilerService, scalaVersion, scalaJSVersion) =>
       compilers += id -> CompilerInfo(
         id,
         compilerService,
         scalaVersion,
+        scalaJSVersion,
         CompilerState.Initializing,
         now,
         "unknown",
@@ -178,7 +189,8 @@ class CompilerManager extends Actor with ActorLogging {
       )
       log.debug(s"Registered compiler $id for Scala $scalaVersion")
       // send current libraries
-      compilerService ! UpdateLibraries(currentLibs.getOrElse(scalaVersion, Set.empty).toList)
+      val libs = currentLibs.getOrElse((scalaVersion, scalaJSVersion), Set.empty).toList
+      compilerService ! UpdateLibraries(libs)
       context.watch(compilerService)
 
     case UnregisterCompiler(id) =>
@@ -233,7 +245,8 @@ class CompilerManager extends Actor with ActorLogging {
           currentLibs = newLibs
           // inform all connected compilers
           compilers.values.foreach { comp =>
-            comp.compilerService ! UpdateLibraries(currentLibs(comp.scalaVersion).toList)
+            val libs = currentLibs((comp.scalaVersion, comp.scalaJSVersion)).toList
+            comp.compilerService ! UpdateLibraries(libs)
           }
         }
       } catch {
@@ -268,6 +281,7 @@ object CompilerManager {
       id: String,
       compilerService: ActorRef,
       scalaVersion: String,
+      scalaJSVersion: String,
       state: CompilerState,
       lastActivity: Long,
       lastClient: String,

@@ -28,6 +28,9 @@ object Config {
   val scalaVersions       = read[Seq[String]](config.getString("scalaVersions"))
   val defaultScalaVersion = config.getString("defaultScalaVersion")
 
+  val scalaJSVersions       = read[Seq[String]](config.getString("scalaJSVersions"))
+  val defaultScalaJSVersion = config.getString("defaultScalaJSVersion")
+
   val defaultLibs = read[Map[String, Set[String]]](config.getString("defaultLibs")).map {
     case (k, v) => k -> v.map(ExtLib(_))
   }

@@ -9,6 +9,7 @@ object Librarian {
   case class LibraryVersion(
       version: String,
       scalaVersions: Seq[String],
+      scalaJSVersions: Seq[String],
       extraDeps: Seq[String],
       organization: Option[String],
       artifact: Option[String],
@@ -35,6 +36,7 @@ object Librarian {
       LibraryVersion(
         readJs[String](values("version")),
         readJs[Seq[String]](values("scalaVersions")),
+        values.get("scalaJSVersions").map(readJs[Seq[String]]).getOrElse(Seq("0.6")),
         readJs[Seq[String]](values.getOrElse("extraDeps", Js.Arr())),
         values.get("organization").map(readJs[String]),
         values.get("artifact").map(readJs[String]),
@@ -61,7 +63,7 @@ object Librarian {
   private val repoSJSRE = """([^ %]+) *%%% *([^ %]+) *% *([^ %]+)""".r
   private val repoRE    = """([^ %]+) *%% *([^ %]+) *% *([^ %]+)""".r
 
-  def loadLibraries(data: String): Map[String, Set[ExtLib]] = {
+  def loadLibraries(data: String): Map[(String, String), Set[ExtLib]] = {
     val libGroups = read[Seq[LibraryGroup]](data)
     (for {
       group      <- libGroups
@@ -69,22 +71,25 @@ object Librarian {
       versionDef <- lib.versions
     } yield {
       versionDef.scalaVersions.flatMap { scalaVersion =>
-        val extraDeps = versionDef.extraDeps.map {
-          case repoSJSRE(grp, artifact, version) =>
-            scalaVersion -> ExtLib(grp, artifact, version, compileTimeOnly = false)
-          case repoRE(grp, artifact, version) =>
-            scalaVersion -> ExtLib(grp, artifact, version, compileTimeOnly = true)
+        versionDef.scalaJSVersions.flatMap { scalaJSVersion =>
+          val extraDeps = versionDef.extraDeps.map {
+            case repoSJSRE(grp, artifact, version) =>
+              ExtLib(grp, artifact, version, compileTimeOnly = false)
+            case repoRE(grp, artifact, version) =>
+              ExtLib(grp, artifact, version, compileTimeOnly = true)
+          }
+          val allLibs = Seq(
+            ExtLib(
+              versionDef.organization.getOrElse(lib.organization),
+              versionDef.artifact.getOrElse(lib.artifact),
+              versionDef.version,
+              lib.compileTimeOnly,
+              versionDef.jsDeps,
+              versionDef.cssDeps
+            )
+          ) ++ extraDeps
+          allLibs.map((scalaVersion, scalaJSVersion) -> _)
         }
-        Seq(
-          scalaVersion -> ExtLib(
-            versionDef.organization.getOrElse(lib.organization),
-            versionDef.artifact.getOrElse(lib.artifact),
-            versionDef.version,
-            lib.compileTimeOnly,
-            versionDef.jsDeps,
-            versionDef.cssDeps
-          )
-        ) ++ extraDeps
       }
     }).flatten.groupBy(_._1).map { case (version, libs) => version -> libs.map(_._2).toSet }
   }
