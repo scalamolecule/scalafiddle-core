@@ -11,6 +11,10 @@ val scalaJS06xCrossVersion = CrossVersion.binaryWith(prefix = "sjs0.6_", suffix 
 val scalaJS1xVersion = "1.0.0"
 val scalaJS1xCrossVersion = CrossVersion.binaryWith(prefix = "sjs1_", suffix = "")
 
+def scalaJSBinVersion(scalaJSVersion: String): String =
+  if (scalaJSVersion.startsWith("0.6.")) "0.6"
+  else "1"
+
 inThisBuild(Def.settings(
   scalafmtOnCompile := true,
   scalacOptions := scalacArgs,
@@ -155,12 +159,12 @@ def compilerServerProject(p: Project, suffix: String, scalaJSVersion: String): P
     docker / imageNames := Seq(
       ImageName(
         namespace = Some("scalafiddle"),
-        repository = s"scalafiddle-core-${scalaBinaryVersion.value}",
+        repository = s"scalafiddle-core-${scalaBinaryVersion.value}-sjs${scalaJSBinVersion(scalaJSVersion)}",
         tag = Some("latest")
       ),
       ImageName(
         namespace = Some("scalafiddle"),
-        repository = s"scalafiddle-core-${scalaBinaryVersion.value}",
+        repository = s"scalafiddle-core-${scalaBinaryVersion.value}-sjs${scalaJSBinVersion(scalaJSVersion)}",
         tag = Some(version.value)
       )
     )
