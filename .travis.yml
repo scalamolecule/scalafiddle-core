@@ -5,8 +5,8 @@ sudo: false
 jdk:
 - openjdk8
 script:
-- sbt ++$TRAVIS_SCALA_VERSION router/test compilerServer/test
-- sbt ++2.11.12 compilerServer/test
+- sbt ++$TRAVIS_SCALA_VERSION router/test compilerServer06x/test compilerServer1x/test
+- sbt ++2.11.12 compilerServer06x/test
 
 # Set up caches, taken from
 # https://www.scala-sbt.org/1.x/docs/Travis-CI-with-sbt.html
