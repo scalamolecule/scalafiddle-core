@@ -61,7 +61,7 @@ lazy val client = project
  * necessary. This setup allows to decouple the version of Scala.js used for
  * `page` from the one used for `client` and its transitive dependencies.
  */
-def pageProject(p: Project, scalaJSVersion: String, scalaJSCrossVersion: CrossVersion): Project = {
+def pageProject(p: Project, suffix: String, scalaJSVersion: String, scalaJSCrossVersion: CrossVersion): Project = {
   p.settings(
     name := "page",
     Compile / sourceDirectory := baseDirectory.value.getParentFile / "page/src/main",
@@ -72,12 +72,12 @@ def pageProject(p: Project, scalaJSVersion: String, scalaJSCrossVersion: CrossVe
     libraryDependencies ++= Seq(
       "org.scala-js" %% "scalajs-library" % scalaJSVersion,
       "org.scala-js" %%% "scalajs-dom"    % versions.dom,
-      "com.lihaoyi"  %%% "scalatags"      % versions.scalatags
+      "com.lihaoyi"  %%% "scalatags"      % versions.scalatags(suffix)
     )
   )
 }
-lazy val page06x = pageProject(project, scalaJS06xVersion, scalaJS06xCrossVersion)
-lazy val page1x = pageProject(project, scalaJS1xVersion, scalaJS1xCrossVersion)
+lazy val page06x = pageProject(project, "06x", scalaJS06xVersion, scalaJS06xCrossVersion)
+lazy val page1x = pageProject(project, "1x", scalaJS1xVersion, scalaJS1xCrossVersion)
 
 /* This project is not compiled. It is only used to easily resolve
  * dependencies.
@@ -182,7 +182,7 @@ lazy val router = project
   .settings(
     name := "scalafiddle-router",
     libraryDependencies ++= Seq(
-      "com.lihaoyi"           %% "scalatags"      % versions.scalatags,
+      "com.lihaoyi"           %% "scalatags"      % versions.scalatags("jvm"),
       "org.webjars"           % "ace"             % versions.ace,
       "org.webjars"           % "normalize.css"   % "2.1.3",
       "org.webjars"           % "jquery"          % "2.2.2",

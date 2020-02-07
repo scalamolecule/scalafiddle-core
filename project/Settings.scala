@@ -26,11 +26,12 @@ object Settings {
     val upickle       = "0.4.4"
     val ace           = "1.2.2"
     val dom           = "0.9.8"
-    val scalatags     = "0.8.5"
     val async         = "0.9.7"
     val coursier      = "1.0.3"
     val kamon         = "0.6.7"
     val base64        = "0.2.4"
+
+    val scalatags = Map("06x" -> "0.6.7", "1x" -> "0.8.5", "jvm" -> "0.8.5")
   }
 
   val kamon = Seq(
