@@ -362,13 +362,20 @@ class WebService(system: ActorSystem, cache: Cache, compilerManager: ActorRef) {
       }
   }
 
-  def wsFlow(scalaVersion: String): Flow[Message, Message, Any] =
-    ActorFlow.actorRef[Message, Message](out => CompilerService.props(out, compilerManager, scalaVersion), () => ())
+  def wsFlow(scalaVersion: String, scalaJSVersion: String): Flow[Message, Message, Any] = {
+    ActorFlow.actorRef[Message, Message]({ out =>
+      CompilerService.props(out, compilerManager, scalaVersion, scalaJSVersion)
+    }, () => ())
+  }
 
   val compilerRoute: Route = {
-    (path("compiler") & parameters(('secret, 'scalaVersion))) { (secret, scalaVersion) =>
-      if (secret == Config.secret && Config.scalaVersions.contains(scalaVersion))
-        handleWebSocketMessages(wsFlow(scalaVersion))
+    (path("compiler") & parameters(('secret, 'scalaVersion, 'scalaJSVersion))) { (secret, scalaVersion, scalaJSVersion) =>
+      val validParams =
+        secret == Config.secret &&
+          Config.scalaVersions.contains(scalaVersion) &&
+          Config.scalaJSVersions.contains(scalaJSVersion)
+      if (validParams)
+        handleWebSocketMessages(wsFlow(scalaVersion, scalaJSVersion))
       else
         complete(HttpResponse(StatusCodes.Forbidden))
     }

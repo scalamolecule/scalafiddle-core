@@ -95,7 +95,7 @@ object GlobalInitCompat {
       override def classPath = cp
 
       override lazy val plugins = List[Plugin](
-        new org.scalajs.core.compiler.ScalaJSPlugin(this),
+        new ScalaJSCompat.ScalaJSCompilerPlugin(this),
         new org.scalamacros.paradise.Plugin(this),
         new d_m.KindProjector(this)
       )
@@ -124,7 +124,7 @@ object GlobalInitCompat {
       override def classPath = cp
 
       override lazy val plugins = List[Plugin](
-        new org.scalajs.core.compiler.ScalaJSPlugin(this),
+        new ScalaJSCompat.ScalaJSCompilerPlugin(this),
         new org.scalamacros.paradise.Plugin(this),
         new d_m.KindProjector(this)
       )

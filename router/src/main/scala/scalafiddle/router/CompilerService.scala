@@ -14,7 +14,10 @@ case object WatchCompiler
 
 case class CompilerPing(id: String)
 
-class CompilerService(out: ActorRef, manager: ActorRef, scalaVersion: String) extends Actor with ActorLogging {
+class CompilerService(out: ActorRef, manager: ActorRef, scalaVersion: String, scalaJSVersion: String)
+    extends Actor
+    with ActorLogging {
+
   implicit val materializer = ActorMaterializer()(context)
   import context.dispatcher
 
@@ -25,7 +28,7 @@ class CompilerService(out: ActorRef, manager: ActorRef, scalaVersion: String) ex
   override def preStart(): Unit = {
     super.preStart()
     log.info(s"CompilerService $id starting (Scala $scalaVersion)")
-    manager ! RegisterCompiler(id, context.self, scalaVersion)
+    manager ! RegisterCompiler(id, context.self, scalaVersion, scalaJSVersion)
   }
 
   def sendOut(msg: CompilerMessage): Unit = {
@@ -77,5 +80,6 @@ class CompilerService(out: ActorRef, manager: ActorRef, scalaVersion: String) ex
 }
 
 object CompilerService {
-  def props(out: ActorRef, manager: ActorRef, scalaVersion: String) = Props(new CompilerService(out, manager, scalaVersion))
+  def props(out: ActorRef, manager: ActorRef, scalaVersion: String, scalaJSVersion: String): Props =
+    Props(new CompilerService(out, manager, scalaVersion, scalaJSVersion))
 }

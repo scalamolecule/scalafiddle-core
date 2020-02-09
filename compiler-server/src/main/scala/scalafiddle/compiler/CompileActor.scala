@@ -5,13 +5,14 @@ import akka.http.scaladsl.model.ws.TextMessage
 import akka.stream.ActorMaterializer
 import kamon.Kamon
 import kamon.metric.instrument.Histogram
-import org.scalajs.core.tools.io.VirtualScalaJSIRFile
 import upickle.default._
 
 import scala.collection.mutable
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scalafiddle.shared._
+
+import ScalaJSCompat.IRFile
 
 case object WatchPong
 
@@ -152,7 +153,7 @@ class CompileActor(out: ActorRef, manager: ActorRef) extends Actor with ActorLog
   def doCompile(
       compiler: Compiler,
       sourceCode: String,
-      processor: Seq[VirtualScalaJSIRFile] => String
+      processor: Seq[IRFile] => String
   ): CompilationResponse = {
     val output = mutable.Buffer.empty[String]
 
