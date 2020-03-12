@@ -36,6 +36,7 @@ object Librarian {
       LibraryVersion(
         readJs[String](values("version")),
         readJs[Seq[String]](values("scalaVersions")),
+        // no scalaJSVersions fields, so all values will be "0.6"
         values.get("scalaJSVersions").map(readJs[Seq[String]]).getOrElse(Seq("0.6")),
         readJs[Seq[String]](values.getOrElse("extraDeps", Js.Arr())),
         values.get("organization").map(readJs[String]),

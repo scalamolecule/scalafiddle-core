@@ -116,8 +116,9 @@ class CompilerManager extends Actor with ActorLogging {
 
     log.debug(s"Selecting compiler for Scala $scalaVersion and libs $libs")
     // check that all libs are supported
-    val versionLibs = currentLibs.getOrElse((scalaVersion, scalaJSVersion), Set.empty)
-    // log.debug(s"Libraries:\n$versionLibs")
+    //    val versionLibs = currentLibs.getOrElse((scalaVersion, scalaJSVersion), Set.empty)
+    val versionLibs = currentLibs.getOrElse((scalaVersion, "0.6"), Set.empty)
+
     libs.foreach(lib =>
       if (!versionLibs.exists(_.sameAs(lib))) throw new IllegalArgumentException(s"Library $lib is not supported")
     )
@@ -189,7 +190,9 @@ class CompilerManager extends Actor with ActorLogging {
       )
       log.debug(s"Registered compiler $id for Scala $scalaVersion")
       // send current libraries
-      val libs = currentLibs.getOrElse((scalaVersion, scalaJSVersion), Set.empty).toList
+      // todo: scalaJSVersion is currently always 0.6
+      val libs = currentLibs.getOrElse((scalaVersion, "0.6"), Set.empty).toList
+      //      val libs = currentLibs.getOrElse((scalaVersion, scalaJSVersion), Set.empty).toList
       compilerService ! UpdateLibraries(libs)
       context.watch(compilerService)
 
