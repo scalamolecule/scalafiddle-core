@@ -15,6 +15,12 @@ object Settings {
     "-Xfatal-warnings"
   )
 
+  // doesn't work...
+  // scala.reflect.internal.MissingRequirementError: class java.lang.Object in compiler mirror not found.
+  //  val scalaOptions = Seq(
+  //    "-usejavacp=true"
+  //  )
+
   /** Declare global dependency versions here to avoid mismatches in multi part dependencies */
   object versions {
     val fiddle        = "1.2.9"
