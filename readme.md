@@ -22,4 +22,4 @@ You can package as a Docker image with
 sbt docker
 ```
 
-Access the fiddle via browser at http://localhost:8080/embed
+Access the fiddle via browser at http://localhost:8880/embed

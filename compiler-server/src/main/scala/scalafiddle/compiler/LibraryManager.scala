@@ -53,11 +53,13 @@ class LibraryManager(val depLibs: Seq[ExtLib]) {
 
   val commonJars = {
     log.debug("Loading common libraries...")
-    val jarFiles = baseLibs
+    val jarFiles  = baseLibs
+    val sunPaths  = System.getProperty("sun.boot.class.path")
+    val javaPaths = System.getProperty("java.class.path")
+    val paths     = if (sunPaths != null) sunPaths else javaPaths
 
     val bootFiles = for {
-      prop <- Seq("sun.boot.class.path")
-      path <- System.getProperty(prop).split(System.getProperty("path.separator"))
+      path <- paths.split(System.getProperty("path.separator"))
       vfile = scala.reflect.io.File(path)
       if vfile.exists && !vfile.isDirectory
     } yield {
