@@ -1,7 +1,7 @@
 package fiddle
 
 import org.scalajs.dom
-import org.scalajs.dom.{CanvasRenderingContext2D, html}
+import org.scalajs.dom.html
 import org.scalajs.dom.html.{Canvas, Div}
 
 import scala.concurrent.{Future, Promise}
@@ -33,10 +33,10 @@ object Fiddle {
     */
   private def getElem[T](id: String): T = dom.document.getElementById(id).asInstanceOf[T]
 
-  val sandbox: Div                   = getElem[html.Div]("container")
-  val canvas: Canvas                 = getElem[html.Canvas]("canvas")
-  val draw: CanvasRenderingContext2D = canvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
-  val panel: Div                     = getElem[html.Div]("output")
+  val sandbox: Div   = getElem[html.Div]("container")
+  val canvas: Canvas = getElem[html.Canvas]("canvas")
+//  val draw: CanvasRenderingContext2D = canvas.getContext("2d").asInstanceOf[dom.CanvasRenderingContext2D]
+  val panel: Div = getElem[html.Div]("output")
 
   def println(ss: Any): Unit = {
     ss match {
@@ -63,7 +63,7 @@ object Fiddle {
     panel.innerHTML = ""
     canvas.height = sandbox.clientHeight
     canvas.width = sandbox.clientWidth
-    draw.clearRect(0, 0, 10000, 10000)
+//    draw.clearRect(0, 0, 10000, 10000)
   }
 
   def defer[T](t: => T): Future[T] = {
