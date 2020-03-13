@@ -53,13 +53,11 @@ class LibraryManager(val depLibs: Seq[ExtLib]) {
 
   val commonJars = {
     log.debug("Loading common libraries...")
-    val jarFiles  = baseLibs
-    val sunPaths  = System.getProperty("sun.boot.class.path")
-    val javaPaths = System.getProperty("java.class.path")
-    val paths     = if (sunPaths != null) sunPaths else javaPaths
+    val jarFiles = baseLibs
 
     val bootFiles = for {
-      path <- paths.split(System.getProperty("path.separator"))
+      prop <- Seq("sun.boot.class.path")
+      path <- System.getProperty(prop).split(System.getProperty("path.separator"))
       vfile = scala.reflect.io.File(path)
       if vfile.exists && !vfile.isDirectory
     } yield {
@@ -75,7 +73,7 @@ class LibraryManager(val depLibs: Seq[ExtLib]) {
   def loadCoursier(libs: Seq[ExtLib]) = {
     import scalaz._
 
-    //    log.debug(s"Loading: $libs")
+    log.debug(s"Loading: $libs")
 
     val repositories = Seq(
       Cache.ivy2Local,
@@ -100,17 +98,17 @@ class LibraryManager(val depLibs: Seq[ExtLib]) {
         start.process.run(fetch).map(res => (lib, res))
       })
       .unsafePerformSync
-    //    results.foreach {
-    //      case (lib, r) =>
-    ////        val root = r.rootDependencies.head
-    //        if (r.metadataErrors.nonEmpty) {
-    //          log.error(r.metadataErrors.toString)
-    //        }
-    ////        log.debug(s"Deps for ${root.moduleVersion}: ${r.minDependencies.size}")
-    //        r.minDependencies.foreach { dep =>
-    //          // log.debug(s"   ${dep.moduleVersion}")
-    //        }
-    //    }
+    results.foreach {
+      case (lib, r) =>
+        val root = r.rootDependencies.head
+        if (r.metadataErrors.nonEmpty) {
+          log.error(r.metadataErrors.toString)
+        }
+        log.debug(s"Deps for ${root.moduleVersion}: ${r.minDependencies.size}")
+        r.minDependencies.foreach { dep =>
+          // log.debug(s"   ${dep.moduleVersion}")
+        }
+    }
     val depArts = results.flatMap(_._2.dependencyArtifacts).distinct
 
     val jars =
@@ -211,7 +209,7 @@ class LibraryManager(val depLibs: Seq[ExtLib]) {
 
   def compilerLibraries(extLibs: Set[ExtLib]): Seq[AbstractFile] = {
     val libs = commonLibraries4compiler ++ deps(extLibs).map(dep => dependency4compiler(dep))
-    //    log.debug(s"Compiler libraries: ${libs.map(_.path)}")
+    log.debug(s"Compiler libraries: ${libs.map(_.path)}")
     libs
   }
 
