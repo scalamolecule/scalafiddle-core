@@ -22,6 +22,7 @@ case object RefreshLibraries
 case object CheckCompilers
 
 class CompilerManager extends Actor with ActorLogging {
+
   import CompilerManager._
 
   val compilers          = mutable.Map.empty[String, CompilerInfo]
@@ -60,25 +61,28 @@ class CompilerManager extends Actor with ActorLogging {
   }
 
   def loadLibraries: Map[(String, String), Set[ExtLib]] = {
-    val url = Config.extLibsUrl
+    //    val url = Config.extLibsUrl
     val result: Map[(String, String), Set[ExtLib]] =
       try {
-        log.debug(s"Loading libraries from $url")
-        val data = if (url.startsWith("file:")) {
-          // load from file system
-          scala.io.Source.fromFile(url.drop(5), "UTF-8").mkString
-        } else if (url.startsWith("http")) {
-          // load from internet
-          scala.io.Source.fromURL(url, "UTF-8").mkString
-        } else {
-          // load from resources
-          scala.io.Source.fromInputStream(getClass.getResourceAsStream(url), "UTF-8").mkString
-        }
-        val extLibs = Librarian.loadLibraries(data)
-        // join with default libs
-        extLibs.map {
-          case (versions, libs) => versions -> (libs ++ Config.defaultLibs.getOrElse(versions._1, Nil))
-        }
+        //        log.debug(s"Loading libraries from $url")
+        //        val data = if (url.startsWith("file:")) {
+        //          // load from file system
+        //          scala.io.Source.fromFile(url.drop(5), "UTF-8").mkString
+        //        } else if (url.startsWith("http")) {
+        //          // load from internet
+        //          scala.io.Source.fromURL(url, "UTF-8").mkString
+        //        } else {
+        //          // load from resources
+        //          scala.io.Source.fromInputStream(getClass.getResourceAsStream(url), "UTF-8").mkString
+        //        }
+        //        val extLibs = Librarian.loadLibraries(data)
+        //        // join with default libs
+        //        extLibs.map {
+        //          case (versions, libs) => versions -> (libs ++ Config.defaultLibs.getOrElse(versions._1, Nil))
+        //        }
+        // Only default 2.12_0.6 libs
+        Map(("2.12", "0.6") -> Config.defaultLibs.getOrElse("2.12", Set.empty[ExtLib]))
+//        Map(("2.12", "1") -> Config.defaultLibs.getOrElse("2.12", Set.empty[ExtLib]))
       } catch {
         case e: Throwable =>
           log.error(e, s"Unable to load libraries")
@@ -118,6 +122,7 @@ class CompilerManager extends Actor with ActorLogging {
     // check that all libs are supported
     //    val versionLibs = currentLibs.getOrElse((scalaVersion, scalaJSVersion), Set.empty)
     val versionLibs = currentLibs.getOrElse((scalaVersion, "0.6"), Set.empty)
+//    val versionLibs = currentLibs.getOrElse((scalaVersion, "1"), Set.empty)
 
     libs.foreach(lib =>
       if (!versionLibs.exists(_.sameAs(lib))) throw new IllegalArgumentException(s"Library $lib is not supported")
@@ -192,6 +197,7 @@ class CompilerManager extends Actor with ActorLogging {
       // send current libraries
       // todo: scalaJSVersion is currently always 0.6
       val libs = currentLibs.getOrElse((scalaVersion, "0.6"), Set.empty).toList
+//      val libs = currentLibs.getOrElse((scalaVersion, "1"), Set.empty).toList
       //      val libs = currentLibs.getOrElse((scalaVersion, scalaJSVersion), Set.empty).toList
       compilerService ! UpdateLibraries(libs)
       context.watch(compilerService)

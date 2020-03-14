@@ -45,8 +45,8 @@ class LibraryManager(val depLibs: Seq[ExtLib]) {
   def baseLibs = Seq(
     resourceStream(s"/scala-library-${Config.scalaVersion}.jar", s"/scala-library.jar"),
     resourceStream(s"/scala-reflect-${Config.scalaVersion}.jar", s"/scala-reflect.jar"),
-    resourceStream(s"/scalajs-library_${Config.scalaMainVersion}-${Config.scalaJSVersion}.jar"),
-    resourceStream(s"/page_sjs${Config.scalaJSBinVersion}_${Config.scalaMainVersion}-${Config.version}.jar")
+    resourceStream(s"/scalajs-library_${Config.scalaMainVersion}-${Config.scalaJSVersion}.jar")
+//    resourceStream(s"/page_sjs${Config.scalaJSBinVersion}_${Config.scalaMainVersion}-${Config.version}.jar")
   )
 
   val sjsVersion = s"_sjs${Config.scalaJSBinVersion}_${Config.scalaMainVersion}"
